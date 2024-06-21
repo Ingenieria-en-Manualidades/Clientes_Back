@@ -37,17 +37,18 @@ class AuthController extends Controller
 
             $user = Auth::user();
             Log::info('Usuario autenticado:', ['user_id' => $user->id, 'name' => $user->name]);
-            //nombre del token
+
+            // Nombre del token
             $tokenName = 'TOKEN CLIENTE: ' . $user->name;
-            // $abilities = ['*']; // Permitir todas las habilidades
             $token = $user->createToken($tokenName)->plainTextToken;
 
-            // Obtener los clientes asociados al usuario
-            $clientes = $user->clientes;
+            // Obtener los clientes asociados al usuario y solo el campo cliente_endpoint_id
+            $clientesEndpointIds = $user->clientes->pluck('cliente_endpoint_id');
+
             return response()->json([
                 'access_token' => $token,
                 'token_type' => 'Bearer',
-                'clientes' => $clientes
+                'clientes_endpoint_ids' => $clientesEndpointIds
             ]);
         } catch (\Exception $e) {
             Log::error('Error en la solicitud de login:', ['error' => $e->getMessage()]);
