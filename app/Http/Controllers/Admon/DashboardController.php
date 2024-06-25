@@ -18,13 +18,10 @@ class DashboardController extends Controller
     {
         // Contar los clientes activos
         $activeClients = Cliente::all()->count();
-        
         // Contar los usuarios activos
         $activeUsers = User::all()->count();
-        
         // Contar los roles
         $rolesCount = Role::count();
-
         // Retornar la vista del dashboard con los datos contados
         return view('dashboard', compact('activeClients', 'activeUsers', 'rolesCount'));
     }

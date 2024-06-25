@@ -104,7 +104,7 @@ class UserController extends Controller
         }
 
         $user = User::findOrFail($id);
-
+        //sanitizacion
         $nombre = htmlspecialchars($request->nombre, ENT_QUOTES, 'UTF-8');
         $user->name = $nombre;
 
