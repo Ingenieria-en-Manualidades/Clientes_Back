@@ -20,9 +20,11 @@ php artisan key:generate
 php artisan migrate --seed
 
 -----------------------------------------
+
 correo: ienm@example.com
 
 contraseña:password
+
 ---------------------------
 
 
