@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <label for="password_confirmation" class="block text-gray-700 text-sm font-bold mb-2">Repetir Contraseña</label>
                     <input type="password" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" id="password_confirmation" name="password_confirmation" required>
                 </div>
-                <button type="submit" class="btn btn-primary bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md">Crear Usuario</button>
+                <button type="submit" class="btn btn-primary bg-blue hover:bg-cyan-200  hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md">Crear Usuario</button>
             </form>`;
     
         $('#toggle-clientes').on('click', () => {
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <input type="password" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" id="password_confirmation" name="password_confirmation">
                     </div>
                     <div class="flex justify-between">
-                        <button type="submit" class="btn btn-primary bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md">Guardar cambios</button>
+                         <button type="submit" class="btn btn-primary bg-blue hover:bg-cyan-200  hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md">Guardar cambios</button>
                         <button type="button" id="toggle-active-button" class="btn ${usuarioActivo === 's' ? 'btn-danger' : 'btn-success'} font-bold py-2 px-4 rounded-md">
                             ${usuarioActivo === 's' ? 'Desactivar' : 'Activar'}
                         </button>

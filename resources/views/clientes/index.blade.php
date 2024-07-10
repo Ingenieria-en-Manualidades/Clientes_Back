@@ -9,7 +9,7 @@
 @section('content')
 <div class="mt-4 mb-4">
     @include('partials.alerts')
-    <div class="flex justify-between mb-4">
+    <div class="flex justify-end mb-4">
         @include('partials.clientes.endpoint_button')
         <x-adminlte-button id="trash-button" label="Eliminados" theme="warning" icon="fa fa-trash" onclick="fetchDeletedClients()" />
     </div>
