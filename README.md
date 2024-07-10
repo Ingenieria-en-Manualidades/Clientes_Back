@@ -18,13 +18,6 @@ php artisan key:generate
 
 
 
------------------------------------------
-
-correo: ienm@example.com
-
-contraseña:password
-
----------------------------
 
 
 para correr el proyecto : *php artisan serve* 
