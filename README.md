@@ -19,13 +19,11 @@ php artisan key:generate
 
 php artisan migrate --seed
 
-
-cuando se general el seed las credenciales para el login son las siguientes:
-
-
+-----------------------------------------
 correo: ienm@example.com
 
 contraseña:password
+---------------------------
 
 
 para correr el proyecto : *php artisan serve* 
