@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
+use App\Models\User;
+use App\Models\TokensPassword;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -84,6 +88,66 @@ class AuthController extends Controller
                     'seconds' => RateLimiter::availableIn($key)
                 ])],
             ]);
+        }
+    }
+
+    public function generateToken(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $email = $request->input('email');
+        $user = User::where('email', $email)->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'Correo no encontrado en la base de datos.'], 404);
+        }
+
+        $token = Str::random(30);
+        $username = $user->name;
+        $id_username = $user->id;
+        $expiresAt = Carbon::now()->addHours(1);
+
+        TokensPassword::create([
+            'id_username' => $id_username,
+            'username' => $username,
+            'email' => $email,
+            'token' => $token,
+            'expires_at' => $expiresAt,
+        ]);
+
+        return response()->json(['token' => $token], 200);
+    }
+
+    public function setVerificarToken($token)
+    {
+        try{
+            $tokenResultado = TokensPassword::where('token', $token)->first();
+
+            if (!$tokenResultado) {
+                return response()->json(['success' => false, 'message' => 'Token no encontrado.', 'codigo' => 404], 404);
+            }
+
+            if (Carbon::now()->greaterThan($tokenResultado->expires_at)) {
+                return response()->json(['success' => false, 'message' => 'Token expirado.', 'codigo' => 403], 403);
+            }
+
+            return response()->json(['success' => true, 'message' => 'Token verificado.', 'id_username' => $tokenResultado->id_username], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Server error.', 'error' => $e->getMessage(), 'codigo' => 500], 500);
+        }
+    }
+
+    public function deleteToken($token)
+    {
+        try {
+            TokensPassword::where('token', $token)->delete();
+
+            return response()->json(['success' => true, 'message' => 'Token expirado.']);
+        } catch (\Throwable $th) {
+            Log::error("Error a la hora de borrar el token.");
+            return response()->json(['success' => false, 'message' => 'Error a la hora de borrar el token.']);
         }
     }
 

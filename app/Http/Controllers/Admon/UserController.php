@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admon;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Cliente;
+use App\Models\TokensPassword;
 use Spatie\Permission\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -118,6 +119,32 @@ class UserController extends Controller
         $user->clientes()->sync($request->clientes);
 
         return redirect()->back()->with('success', 'Usuario actualizado exitosamente');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|string|min:1',
+            'password' => 'required|string|min:8',
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => 'Faltan campos que llenar.'], 406);
+        }
+
+        $id = $request->id;
+        $user = User::findOrFail($id);
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Usuario no encontrado en la base de datos.'], 404);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        TokensPassword::where('id_username', $id)->delete();
+
+        return response()->json(['success' => true, 'message' => 'Contraseña actualizada exitosamente.'], 200);
     }
 
     /**
