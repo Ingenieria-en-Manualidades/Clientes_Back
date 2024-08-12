@@ -92,7 +92,7 @@ class UserController extends Controller
     public function update(Request $request, int $id)
     {
         $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:15',
+            'nombre' => 'required|string|max:30',
             'rol' => 'required|exists:roles,id',
             'password' => 'nullable|string|min:8|confirmed',
             'clientes' => 'array',
@@ -104,7 +104,7 @@ class UserController extends Controller
         }
 
         $user = User::findOrFail($id);
-
+        //sanitizacion
         $nombre = htmlspecialchars($request->nombre, ENT_QUOTES, 'UTF-8');
         $user->name = $nombre;
 

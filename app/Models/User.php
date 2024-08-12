@@ -80,4 +80,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Cliente::class);
     }
+
+    public function cliente_endpoint()
+{
+    return $this->hasOne(Cliente::class);
+}
 }

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -17,37 +19,46 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        try {
-            Log::info('Datos de la solicitud de login:', $request->except(['password']));
+        $request->validate([
+            'username' => 'required|string|max:255',
+            'password' => 'required|string|min:8',
+        ]);
 
-            $request->validate([
-                'name' => 'required|string',
-                'password' => 'required|string',
+        $username = filter_var($request->input('username'), FILTER_SANITIZE_SPECIAL_CHARS);
+        $password = $request->input('password');
+        $credentials = [
+            'name' => $username,
+            'password' => $password
+        ];
+
+        $this->checkTooManyLoginAttempts($request);
+
+        if (!Auth::attempt($credentials)) {
+            $this->incrementLoginAttempts($request);
+            Log::warning('Detalles de inicio de sesión inválidos:', ['name' => $credentials['name']]);
+            throw ValidationException::withMessages([
+                'username' => [trans('auth.failed')],
             ]);
-
-            $credentials = [
-                'name' => htmlspecialchars($request->input('name'), ENT_QUOTES, 'UTF-8'),
-                'password' => $request->input('password')
-            ];
-
-            if (!Auth::attempt($credentials)) {
-                Log::warning('Detalles de inicio de sesión inválidos:', ['name' => $credentials['name']]);
-                return response()->json(['message' => 'Detalles de inicio de sesión inválidos'], 401);
-            }
-
-            $user = Auth::user();
-            Log::info('Usuario autenticado:', ['user_id' => $user->id, 'name' => $user->name]);
-
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            return response()->json([
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error en la solicitud de login:', ['error' => $e->getMessage()]);
-            return response()->json(['error' => 'Autenticación fallida'], 401);
         }
+
+        $user = Auth::user();
+
+        if ($user->activo === 'n') {
+            Auth::logout();
+            return response()->json(['message' => 'Este cliente está inactivo'], 403);
+        }
+
+        $tokenName = 'TOKEN CLIENTE: ' . $user->name;
+        $token = $user->createToken($tokenName)->plainTextToken;
+        $clientesEndpointIds = $user->clientes->pluck('cliente_endpoint_id');
+
+        $this->clearLoginAttempts($request);
+
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'clientes_endpoint_ids' => $clientesEndpointIds
+        ]);
     }
 
     /**
@@ -61,5 +72,33 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Sesión cerrada con éxito']);
+    }
+
+    protected function checkTooManyLoginAttempts(Request $request)
+    {
+        $key = $this->throttleKey($request);
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            Log::warning('Demasiados intentos de inicio de sesión.', ['name' => $request->input('username')]);
+            throw ValidationException::withMessages([
+                'username' => [trans('auth.throttle', [
+                    'seconds' => RateLimiter::availableIn($key)
+                ])],
+            ]);
+        }
+    }
+
+    protected function incrementLoginAttempts(Request $request)
+    {
+        RateLimiter::hit($this->throttleKey($request), 60);
+    }
+
+    protected function clearLoginAttempts(Request $request)
+    {
+        RateLimiter::clear($this->throttleKey($request));
+    }
+
+    protected function throttleKey(Request $request)
+    {
+        return strtolower($request->input('username')).'|'.$request->ip();
     }
 }

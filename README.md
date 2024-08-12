@@ -7,18 +7,14 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
-## COMO PONERLO A FUNCIONAR:
+## COMO CORRER EL PROYECTO:
 
-el archivo '.env.example' es el archivo que se copia para ser el nuevo '.env' configurarlo segun su local
+//PRIMERA VEZ
 
 composer install
 
 php artisan key:generate
-php artisan migrate --seed
 
-cuando se general el seed las credenciales para el login son las siguientes:
-correo: ienm@example.com
-contraseña:password
+para correr el proyecto : _php artisan serve_
 
-para correr el proyecto : *php artisan serve* 
-y despues: *npm run dev*
+y despues: _npm run dev_

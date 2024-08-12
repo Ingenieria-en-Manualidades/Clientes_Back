@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${generatePermissionsCheckboxes(permissions)}
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md">Guardar Cambios</button>
+                    <button type="submit" class="btn btn-primary bg-blue hover:bg-cyan-200 text-white font-bold py-2 px-4 rounded-md">Guardar Cambios</button>
                 </form>`;
         };
 
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${generatePermissionsCheckboxes()}
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md">Crear Rol</button>
+                    <button type="submit" class="btn btn-primary bg-blue hover:bg-cyan-200 text-white font-bold py-2 px-4 rounded-md">Crear Rol</button>
                 </form>`;
         };
 
