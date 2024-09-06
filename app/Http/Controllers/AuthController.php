@@ -40,6 +40,7 @@ class AuthController extends Controller
         if (!Auth::attempt($credentials)) {
             $this->incrementLoginAttempts($request);
             Log::warning('Detalles de inicio de sesión inválidos:', ['name' => $credentials['name']]);
+            return response()->json(['tittle' => 'Usuario invalido', 'message' => 'Usuario o contraseña mal ingresados.'], 422);
             throw ValidationException::withMessages([
                 'username' => [trans('auth.failed')],
             ]);
@@ -49,7 +50,7 @@ class AuthController extends Controller
 
         if ($user->activo === 'n') {
             Auth::logout();
-            return response()->json(['message' => 'Este cliente está inactivo'], 403);
+            return response()->json(['tittle' => 'Usuario inactivo', 'message' => 'Este cliente está inactivo'], 403);
         }
 
         $tokenName = 'TOKEN CLIENTE: ' . $user->name;
