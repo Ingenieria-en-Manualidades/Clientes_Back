@@ -41,9 +41,10 @@ class AuthController extends Controller
             $this->incrementLoginAttempts($request);
             Log::warning('Detalles de inicio de sesión inválidos:', ['name' => $credentials['name']]);
             return response()->json(['tittle' => 'Usuario invalido', 'message' => 'Usuario o contraseña mal ingresados.'], 422);
-            throw ValidationException::withMessages([
-                'username' => [trans('auth.failed')],
-            ]);
+            //Función alterna al haber un error a la hora de verificar al usuario.
+            // throw ValidationException::withMessages([
+            //     'username' => [trans('auth.failed')],
+            // ]);
         }
 
         $user = Auth::user();
@@ -137,6 +138,19 @@ class AuthController extends Controller
             return response()->json(['success' => true, 'message' => 'Token verificado.', 'id_username' => $tokenResultado->id_username], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Server error.', 'error' => $e->getMessage(), 'codigo' => 500], 500);
+        }
+    }
+
+    public function setVerificarLogin(Request $request)
+    {
+        $token = $request->user()->tokens;
+
+        Log::info('valor del token: ', ['token' => $token]);
+
+        if (!$token) {
+            return response()->json(['success' => false], 404);
+        }else {
+            return response()->json(['success' => true], 200);
         }
     }
 
