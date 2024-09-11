@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
+use Exception;
+
 
 class AuthController extends Controller
 {
@@ -23,49 +25,101 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $request->validate([
-            'username' => 'required|string|max:255',
-            'password' => 'required|string|min:8',
-        ]);
+        function decryptAES($encryptedHex, $keyValue)
+{
+    $salt = 'salt'; // El mismo salt que se usó para derivar la clave en el frontend
+    $iterations = 100; // Las mismas iteraciones usadas en PBKDF2
 
-        $username = filter_var($request->input('username'), FILTER_SANITIZE_SPECIAL_CHARS);
-        $password = $request->input('password');
-        $credentials = [
-            'name' => $username,
-            'password' => $password
-        ];
-
-        $this->checkTooManyLoginAttempts($request);
-
-        if (!Auth::attempt($credentials)) {
-            $this->incrementLoginAttempts($request);
-            Log::warning('Detalles de inicio de sesión inválidos:', ['name' => $credentials['name']]);
-            return response()->json(['tittle' => 'Usuario invalido', 'message' => 'Usuario o contraseña mal ingresados.'], 422);
-            //Función alterna al haber un error a la hora de verificar al usuario.
-            // throw ValidationException::withMessages([
-            //     'username' => [trans('auth.failed')],
-            // ]);
-        }
-
-        $user = Auth::user();
-
-        if ($user->activo === 'n') {
-            Auth::logout();
-            return response()->json(['tittle' => 'Usuario inactivo', 'message' => 'Este cliente está inactivo'], 403);
-        }
-
-        $tokenName = 'TOKEN CLIENTE: ' . $user->name;
-        $token = $user->createToken($tokenName)->plainTextToken;
-        $clientesEndpointIds = $user->clientes->pluck('cliente_endpoint_id');
-
-        $this->clearLoginAttempts($request);
-
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'clientes_endpoint_ids' => $clientesEndpointIds
-        ]);
+    // Verifica que la longitud del cifrado sea al menos 32 caracteres (16 bytes para el IV)
+    if (strlen($encryptedHex) < 32) {
+        throw new Exception('La cadena cifrada es demasiado corta.');
     }
+
+    // Valida que el texto cifrado sea un valor hexadecimal válido
+    if (!ctype_xdigit($encryptedHex)) {
+        throw new Exception('La cadena cifrada no es un valor hexadecimal válido.');
+    }
+
+    // Extraer el IV (primeros 32 caracteres hexadecimales, 16 bytes)
+    $ivHex = substr($encryptedHex, 0, 32);
+    $cipherTextHex = substr($encryptedHex, 32); // El resto es el texto cifrado
+
+    // Convierte IV y texto cifrado de hexadecimal a binario
+    $iv = hex2bin($ivHex);
+    $cipherText = hex2bin($cipherTextHex);
+
+    // Derivar la clave usando PBKDF2
+    $key = hash_pbkdf2('sha256', $keyValue, $salt, $iterations, 32, true);
+
+    // Desencriptar el texto cifrado usando AES-256-CBC
+    $decrypted = openssl_decrypt($cipherText, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+
+    if ($decrypted === false) {
+        throw new Exception('Error al desencriptar los datos');
+    }
+
+    return $decrypted;
+}
+
+
+try {
+    $encryptedHex = $request->input('encrypted_data'); 
+    if (!$encryptedHex) {
+        throw new Exception('Datos cifrados no proporcionados.');
+    }
+    $keyValue = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'; 
+
+    $decryptedData = decryptAES($encryptedHex, $keyValue);
+    $credentials = json_decode($decryptedData, true); 
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        throw new Exception('Error al decodificar los datos desencriptados.');
+    }
+
+    $decryptedUsername = $credentials['username'] ?? null;
+    $decryptedPassword = $credentials['password'] ?? null;
+
+    $username = filter_var($decryptedUsername, FILTER_SANITIZE_SPECIAL_CHARS);
+    $password = $decryptedPassword;
+
+    $credentials = [
+        'name' => $username,
+        'password' => $password
+    ];
+
+    $this->checkTooManyLoginAttempts($request);
+
+    // Intento de autenticación
+    if (!Auth::attempt($credentials)) {
+        $this->incrementLoginAttempts($request);
+        Log::warning('Detalles de inicio de sesión inválidos:', ['name' => $credentials['name']]);
+        return response()->json(['title' => 'Usuario inválido', 'message' => 'Usuario o contraseña incorrectos.'], 422);
+    }
+
+    $user = Auth::user();
+
+    if ($user->activo === 'n') {
+        Auth::logout();
+        return response()->json(['title' => 'Usuario inactivo', 'message' => 'Este cliente está inactivo'], 403);
+    }
+
+    $tokenName = 'TOKEN CLIENTE: ' . $user->name;
+    $token = $user->createToken($tokenName)->plainTextToken;
+    $clientesEndpointIds = $user->clientes->pluck('cliente_endpoint_id');
+
+    $this->clearLoginAttempts($request);
+
+    return response()->json([
+        'access_token' => $token,
+        'token_type' => 'Bearer',
+        'clientes_endpoint_ids' => $clientesEndpointIds
+    ]);
+
+} catch (Exception $e) {
+    Log::error('Error en el proceso de login: ' . $e->getMessage());
+    return response()->json(['title' => 'Error', 'message' => $e->getMessage()], 500);
+}
+
+}
 
     /**
      * Maneja la solicitud de cierre de sesión de un usuario.
