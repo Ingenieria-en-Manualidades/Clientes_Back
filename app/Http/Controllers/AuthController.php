@@ -177,6 +177,19 @@ try {
         }
     }
 
+    public function setVerificarLogin(Request $request)
+    {
+        $token = $request->user()->tokens;
+
+        Log::info('valor del token: ', ['token' => $token]);
+
+        if (!$token) {
+            return response()->json(['success' => false], 404);
+        }else {
+            return response()->json(['success' => true], 200);
+        }
+    }
+
     public function deleteToken($token)
     {
         try {

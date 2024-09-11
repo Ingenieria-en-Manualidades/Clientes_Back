@@ -19,6 +19,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::post('/generartoken', [AuthController::class, 'generateToken']);
-Route::get('verificarToken/{token}', [AuthController::class, 'setVerificarToken']);
+Route::get('/verificarToken/{token}', [AuthController::class, 'setVerificarToken']);
+Route::post('/verificarTokenLogin', [AuthController::class, 'setVerificarLogin'])->middleware('auth:sanctum');
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
 Route::get('borrarToken/{token}', [AuthController::class, 'deleteToken']);
 Route::post('/updatePassword', [UserController::class, 'updatePassword']);
