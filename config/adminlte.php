@@ -63,12 +63,12 @@ return [
     |
     */
 
-    'logo' => '<strong>IMEC</strong><b style="font-weight: 900;">++</b>',
-    'logo_img' => 'vendor/adminlte/dist/img/Iman.png',
+    'logo' => '<div style="text-align: center;"><span style="font-weight: 900; font-size: 1.3em;">IMEC</span><b style="font-weight: 900; color: yellow; font-size: 1.5em;">+</b></div>',
+    'logo_img' => null,
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'Admin Logo',
+    'logo_img_alt' => null,
 
     /*
     |--------------------------------------------------------------------------
@@ -335,6 +335,7 @@ return [
             'text' => 'Clientes',
             'url' => 'clientes',
             'icon' => 'fas fa-fw fa-user',
+            'can' => 'ver clientes',
         ],
         [
             'text' => 'Administracion',
@@ -353,6 +354,7 @@ return [
                     'text'         => 'Admin. Tokens',
                     'url'          => 'user/api-tokens',
                     'icon'         => 'fas fa-key',
+                    'role' => 'admin',
                 ],
             ],
         ],

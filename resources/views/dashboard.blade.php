@@ -4,6 +4,8 @@
 
 @section('content_header')
 <h1>Dashboard</h1>
+<!-- <button id="darkModeToggle">Cambiar Modo</button> -->
+
 @stop
 
 @section('content')
@@ -43,5 +45,9 @@
 @stop
 
 @section('js')
-
+<!-- <script>
+document.getElementById('darkModeToggle').addEventListener('click', function() {
+    document.body.classList.toggle('dark-mode');
+});
+</script> -->
 @stop
