@@ -1,3 +1,3 @@
-@can('Crear Usuarios')
+@can('Gestionar Usuarios')
 <x-adminlte-button id="create-button" label="Crear Usuario" theme="primary" icon="fas fa-plus" data-toggle="modal" data-target="#modalPurple" />
 @endcan

@@ -6,7 +6,7 @@
     <td class="font-bold">{{ $cliente->cliente_endpoint_id }}</td>
     <td>
         <nobr>
-          @can('activar/desactivar clientes')
+          @can('GESTIONAR CLIENTES')
             <button class="btn btn-xs btn-default text-primary mx-1 shadow edit-button" 
                     title="Edit" 
                     data-toggle="modal" 
@@ -17,7 +17,6 @@
                     data-cliente-id="{{ $cliente->cliente_id }}">
                 <i class="fa fa-lg fa-fw fa-pen"></i>
             </button>
-            @endcan
             <form id="deshabilitar-form-{{ $cliente->id }}" action="{{ route('clientes.destroy', $cliente->id) }}" method="POST" class="inline delete-form">
                 @csrf
                 @method('DELETE')
@@ -25,6 +24,7 @@
                     <i class="fa fa-lg fa-fw fa-trash"></i>
                 </button>
             </form>
+            @endcan
         </nobr>
     </td>
 </tr>

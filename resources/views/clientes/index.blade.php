@@ -11,8 +11,10 @@
         @include('partials.alerts')
         <div class="flex justify-end mb-4">
             @include('partials.clientes.endpoint_button')
+            @can('GESTIONAR CLIENTES')
             <x-adminlte-button id="trash-button" label="Eliminados" theme="warning" icon="fa fa-trash"
                 onclick="fetchDeletedClients()" />
+            @endcan
         </div>
 
         @php
