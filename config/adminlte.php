@@ -335,7 +335,7 @@ return [
             'text' => 'Clientes',
             'url' => 'clientes',
             'icon' => 'fas fa-fw fa-user',
-            'can' => 'ver clientes',
+            'permission' => 'Gestionar Clientes',
         ],
         [
             'text' => 'Administracion',

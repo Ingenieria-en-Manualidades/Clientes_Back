@@ -9,7 +9,7 @@
 
     <td>
         <nobr>
-        @can('activar/desactivar clientes')
+        @can('Gestionar Usuarios')
             <button class="btn btn-xs btn-default text-primary mx-1 shadow edit-button" title="Editar Usuario" data-toggle="modal" data-target="#modalPurple"   data-usuario-activo="{{ $usuario->activo }}"   data-id="{{ $usuario->id }}" data-nombre="{{ $usuario->name }}" data-rol-id="{{ $usuario->roles->pluck('id')->implode(',') }}" data-clientes-seleccionados="{{ $usuario->clientes->pluck('id')->implode(',') }}">
                 <i class="fa fa-lg fa-fw fa-pen"></i>
             </button>

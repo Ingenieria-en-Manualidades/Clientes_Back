@@ -9,6 +9,7 @@
         @endforeach
     </td>
     <td>
+        @can('Gestionar Roles')
         <button class="btn btn-xs btn-default text-primary mx-1 shadow edit-button" 
                 title="Edit" 
                 data-toggle="modal" 
@@ -26,5 +27,6 @@
                 <i class="fa fa-lg fa-fw fa-trash"></i>
             </button>
         </form>
+        @endcan
     </td>
 </tr>
