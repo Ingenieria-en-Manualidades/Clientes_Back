@@ -118,7 +118,31 @@ class RolePermissionController extends Controller
      */
     public function getRoles()
     {
-        $roles = Role::with('permissions')->get();
-        return response()->json($roles);
+        $roles = Role::with('permissions')->get();  // Incluye los permisos relacionados con los roles
+        $permissions = Permission::all();  // Obtén todos los permisos
+
+        // Devuelve un JSON que contenga tanto los roles como los permisos
+        return response()->json([
+            'roles' => $roles,
+            'permissions' => $permissions,
+        ]);
+    }
+
+    /**
+     * crea un permiso para asignar a un  rol
+     *
+     * @param Request $request La solicitud HTTP que contiene los datos del nuevo rol.
+     * @return \Illuminate\Http\RedirectResponse Redirige a la lista de roles con un mensaje de éxito
+     */
+
+    public function storePermission(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|unique:permissions,name',
+        ]);
+
+        Permission::create(['name' => $request->name]);
+
+        return redirect()->back()->with('success', 'Permiso creado con éxito.');
     }
 }

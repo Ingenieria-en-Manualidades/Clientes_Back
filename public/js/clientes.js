@@ -66,7 +66,7 @@ async function fetchDeletedClients() {
         }
         const data = await response.json();
         updateClientTable(data, 'No se encontraron datos eliminados.');
-        updateTrashButton('Regresar', 'btn-warning', 'btn-success', fetchActiveClients);
+        updateTrashButton('<-- Volver Atras', 'btn-warning', 'btn-primary', fetchActiveClients);
     } catch (error) {
         console.error('Error fetching deleted clients:', error);
         displayError('Ocurrió un error al obtener los datos eliminados.');

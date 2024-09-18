@@ -8,11 +8,14 @@
 
 @section('content')
 <div class="mt-4 mb-4">
-    @include('partials.alerts')
-    <div class="flex justify-between mb-4">
+@include('partials.alerts')
+<div class="flex justify-between mb-4">
+    <div class="flex justify-start space-x-4"> 
         @include('partials.roles.create_button')
-        @include('partials.roles.trash_button')
+        @include('partials.roles.permission_button')
     </div>
+    @include('partials.roles.trash_button')
+</div>
 
     @php
     $heads = [
