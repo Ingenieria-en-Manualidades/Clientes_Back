@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
-    
+
     /**
      * Muestra una lista de los usuarios, roles y clientes.
      *
@@ -99,7 +99,7 @@ class UserController extends Controller
             'clientes' => 'array',
             'clientes.*' => 'exists:clientes,id',
         ]);
-        
+
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
@@ -127,7 +127,7 @@ class UserController extends Controller
             'id' => 'required|string|min:1',
             'password' => 'required|string|min:8',
         ]);
-        
+
         if ($validator->fails()) {
             return response()->json(['success' => false, 'message' => 'Faltan campos que llenar.'], 406);
         }
@@ -226,4 +226,42 @@ class UserController extends Controller
             return response()->json(['success' => false, 'message' => 'Ocurrió un error al actualizar el estado del usuario.']);
         }
     }
+
+    public function ResetPassword(Request $request, $id)
+{
+    $sanitizedPassword = trim(strip_tags($request->input('password')));
+    $sanitizedPasswordConfirmation = trim(strip_tags($request->input('password_confirmation')));
+
+    // Validar los datos
+    $request->merge([
+        'password' => $sanitizedPassword,
+        'password_confirmation' => $sanitizedPasswordConfirmation
+    ]);
+
+    $validator = Validator::make($request->all(), [
+        'password' => ['required', 'string', 'min:8', 'regex:/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{8,}$/'],
+        'password_confirmation' => ['required', 'same:password']
+    ]);
+
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Errores de validación',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    $user = User::findOrFail($id);
+
+    $user->password = Hash::make($sanitizedPassword);
+    $user->save();
+
+
+    return response()->json([
+        'success' => true,
+        'message' => 'La contraseña ha sido actualizada correctamente.'
+    ]);
+}
+
 }

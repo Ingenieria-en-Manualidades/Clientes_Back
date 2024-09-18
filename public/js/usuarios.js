@@ -4,7 +4,7 @@ async function fetchDeletedUsers() {
         const response = await fetch('/usuarios/deshabilitados');
         const data = await response.json();
         updateUserTable(data, 'No se encontraron datos eliminados.');
-        updateTrashButton('Regresar', 'btn-warning', 'btn-success', fetchActiveUsers);
+        updateTrashButton('<-- Volver Atras', 'btn-warning', 'btn-primary', fetchActiveUsers);
     } catch (error) {
         console.error('Error fetching deleted users:', error);
         displayError('Ocurrió un error al obtener los datos eliminados.');
@@ -86,6 +86,8 @@ const autoHideMessages = () => {
     }, 3000);
 };
 
+
+//PARA CREAR EL USUARIO 
 document.addEventListener('DOMContentLoaded', async () => {
     autoHideMessages();
 
@@ -115,7 +117,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <span class="text-gray-700">${cliente.nombre}</span>
                 </label>
             </li>`).join('');
-    
+
         modalBody.innerHTML = `
             <form id="createUserForm" action="/usuarios" method="POST">
                 <input type="hidden" name="_token" value="${csrfToken}">
@@ -131,7 +133,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </select>
                 </div>
                 <div class="form-group mb-4">
-                    <label for="clientes" class="block text-gray-700 text-sm font-bold mb-2">Clientes</label>
+                    <label for="clientes" c
+                    lass="block text-gray-700 text-sm font-bold mb-2">Clientes</label>
                     <div class="relative">
                         <button type="button" id="toggle-clientes" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-left">
                             Selecciona clientes
@@ -143,44 +146,67 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
                     </div>
                 </div>
-                <div class="form-group mb-4">
+                 <div class="form-group mb-4">
                     <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Contraseña</label>
                     <input type="password" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" id="password" name="password" required>
+                    <p id="password-error" class="text-red-500 text-sm mt-1 hidden">La contraseña debe ser alfanumérica y tener al menos 8 caracteres.</p>
                 </div>
                 <div class="form-group mb-4">
                     <label for="password_confirmation" class="block text-gray-700 text-sm font-bold mb-2">Repetir Contraseña</label>
                     <input type="password" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" id="password_confirmation" name="password_confirmation" required>
+                    <p id="password-confirm-error" class="text-red-500 text-sm mt-1 hidden">Las contraseñas no coinciden.</p>
                 </div>
-                <button type="submit" class="btn btn-primary bg-blue hover:bg-cyan-200  hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md">Crear Usuario</button>
+                <button type="submit" id="confirm-change-btn" class="btn btn-primary bg-blue hover:bg-cyan-200  hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md" disabled>Crear Usuario</button>
             </form>`;
-    
+
+        // Desplegar lista de clientes
         $('#toggle-clientes').on('click', () => {
             $('#clientes-list').toggleClass('hidden');
         });
-    
+
         $(document).on('click', (event) => {
             if (!$(event.target).closest('#toggle-clientes').length && !$(event.target).closest('#clientes-list').length) {
                 $('#clientes-list').addClass('hidden');
             }
         });
-    
-        document.getElementById('createUserForm').addEventListener('submit', function(event) {
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('password_confirmation').value;
-            if (password !== confirmPassword) {
-                event.preventDefault();
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Las contraseñas no coinciden.',
-                    icon: 'error',
-                    confirmButtonText: 'Aceptar'
-                });
+
+        // Validación de contraseñas en tiempo real
+        const passwordInput = document.getElementById('password');
+        const passwordConfirmationInput = document.getElementById('password_confirmation');
+        const passwordError = document.getElementById('password-error');
+        const passwordConfirmError = document.getElementById('password-confirm-error');
+        const confirmButton = document.getElementById('confirm-change-btn');
+        const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+        const checkPasswordValidity = () => {
+            const isPasswordValid = passwordRegex.test(passwordInput.value);
+            const doPasswordsMatch = passwordInput.value === passwordConfirmationInput.value;
+
+            if (isPasswordValid) {
+                passwordError.classList.add('hidden');
+            } else {
+                passwordError.classList.remove('hidden');
             }
-        });
+
+            if (doPasswordsMatch) {
+                passwordConfirmError.classList.add('hidden');
+            } else {
+                passwordConfirmError.classList.remove('hidden');
+            }
+
+            // Habilitar o deshabilitar el botón si las contraseñas son válidas
+            confirmButton.disabled = !(isPasswordValid && doPasswordsMatch);
+        };
+
+        passwordInput.addEventListener('input', checkPasswordValidity);
+        passwordConfirmationInput.addEventListener('input', checkPasswordValidity);
     };
-    
+
     // Asignar manejador de eventos al botón de crear usuario
     $('#create-button').on('click', handleCreateButtonClick);
+
+//FIN CREAR USUARIO
+
 
     // Asignar manejador de eventos a los botones de editar usuario
     document.querySelectorAll('.edit-button').forEach(button => {
@@ -190,7 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const rolId = this.getAttribute('data-rol-id');
             const usuarioActivo = this.getAttribute('data-usuario-activo');
             const clientesSeleccionados = this.getAttribute('data-clientes-seleccionados').split(',').map(Number);
-    
+
             const modalBody = document.querySelector('#modalPurple .modal-body');
             const rolesOptions = roles.map(role => `<option value="${role.id}"${role.id == rolId ? ' selected' : ''}>${role.name}</option>`).join('');
             const clientesList = clientes.map(cliente => `
@@ -200,7 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <span class="text-gray-700">${cliente.nombre}</span>
                     </label>
                 </li>`).join('');
-    
+
             modalBody.innerHTML = `
                 <form id="user-edit-form" action="/usuarios/${id}" method="POST" class="space-y-4">
                     <input type="hidden" name="_token" value="${csrfToken}">
@@ -229,94 +255,212 @@ document.addEventListener('DOMContentLoaded', async () => {
                             </div>
                         </div>
                     </div>
-                    <div class="form-group mb-4">
-                        <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Cambiar Contraseña</label>
-                        <input type="password" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" id="password" name="password">
-                    </div>
-                    <div class="form-group mb-4">
-                        <label for="password_confirmation" class="block text-gray-700 text-sm font-bold mb-2">Confirmar Contraseña</label>
-                        <input type="password" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" id="password_confirmation" name="password_confirmation">
-                    </div>
                     <div class="flex justify-between">
                          <button type="submit" class="btn btn-primary bg-blue hover:bg-cyan-200  hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md">Guardar cambios</button>
                         <button type="button" id="toggle-active-button" class="btn ${usuarioActivo === 's' ? 'btn-danger' : 'btn-success'} font-bold py-2 px-4 rounded-md">
-                            ${usuarioActivo === 's' ? 'Desactivar' : 'Activar'}
+                            ${usuarioActivo === 's' ? 'Desactivar Usuario' : 'Activar Usuario'}
                         </button>
                     </div>
                 </form>`;
-    
+
             $('#toggle-clientes-edit').on('click', () => {
                 $('#clientes-list-edit').toggleClass('hidden');
             });
-    
+
             $(document).on('click', (event) => {
                 if (!$(event.target).closest('#toggle-clientes-edit').length && !$(event.target).closest('#clientes-list-edit').length) {
                     $('#clientes-list-edit').addClass('hidden');
                 }
             });
-    
-            document.getElementById('user-edit-form').addEventListener('submit', function(event) {
-                const password = document.getElementById('password').value;
-                const confirmPassword = document.getElementById('password_confirmation').value;
-                if (password !== confirmPassword) {
-                    event.preventDefault();
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Las contraseñas no coinciden.',
-                        icon: 'error',
-                        confirmButtonText: 'Aceptar'
-                    });
-                }
-            });
-    
-            document.getElementById('toggle-active-button').addEventListener('click', function() {
-                fetch(`/usuarios/toggle-active/${id}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                    },
-                }).then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        Swal.fire({
-                            title: 'Éxito',
-                            text: 'El estado del usuario ha sido actualizado.',
-                            icon: 'success',
-                            confirmButtonText: 'Aceptar'
-                        });
-                        // Actualizar el botón según el nuevo estado
-                        const button = document.getElementById('toggle-active-button');
-                        if (button.classList.contains('btn-danger')) {
-                            button.classList.remove('btn-danger');
-                            button.classList.add('btn-success');
-                            button.textContent = 'Activar';
-                        } else {
-                            button.classList.remove('btn-success');
-                            button.classList.add('btn-danger');
-                            button.textContent = 'Desactivar';
-                        }
-                    } else {
-                        Swal.fire({
-                            title: 'Error',
-                            text: 'Ocurrió un error al actualizar el estado del usuario.',
-                            icon: 'error',
-                            confirmButtonText: 'Aceptar'
-                        });
+
+
+            // SweetAlert para confirmar activar o desactivar usuario
+            document.getElementById('toggle-active-button').addEventListener('click', function () {
+                const action = usuarioActivo === 's' ? 'desactivar' : 'activar';
+                Swal.fire({
+                    title: `¿Estás seguro de que deseas ${action} este usuario?`,
+                    text: `El usuario será ${action}ado.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: `Sí, ${action}!`,
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch(`/usuarios/toggle-active/${id}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                            },
+                        }).then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    Swal.fire({
+                                        title: 'Éxito',
+                                        text: `El usuario ha sido ${action}ado.`,
+                                        icon: 'success',
+                                        confirmButtonText: 'Aceptar'
+                                    });
+                                    // Actualizar el botón según el nuevo estado
+                                    const button = document.getElementById('toggle-active-button');
+                                    if (button.classList.contains('btn-danger')) {
+                                        button.classList.remove('btn-danger');
+                                        button.classList.add('btn-success');
+                                        button.textContent = 'Activar';
+                                    } else {
+                                        button.classList.remove('btn-success');
+                                        button.classList.add('btn-danger');
+                                        button.textContent = 'Desactivar';
+                                    }
+                                } else {
+                                    Swal.fire({
+                                        title: 'Error',
+                                        text: 'Ocurrió un error al actualizar el estado del usuario.',
+                                        icon: 'error',
+                                        confirmButtonText: 'Aceptar'
+                                    });
+                                }
+                            }).catch(error => {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: 'Ocurrió un error al actualizar el estado del usuario.',
+                                    icon: 'error',
+                                    confirmButtonText: 'Aceptar'
+                                });
+                            });
                     }
-                }).catch(error => {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Ocurrió un error al actualizar el estado del usuario.',
-                        icon: 'error',
-                        confirmButtonText: 'Aceptar'
-                    });
+                });
+            });
+
+            // SweetAlert para confirmar guardar cambios
+            document.getElementById('user-edit-form').addEventListener('submit', function (e) {
+                e.preventDefault(); // Prevenir el envío automático del formulario
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: "¿Deseas guardar los cambios?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sí, guardar!',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.submit(); // Enviar el formulario si se confirma la acción
+                    }
                 });
             });
         });
     });
+
+
+
+    // Asignar manejador de eventos a los botones de resetear contraseña del usuario usuario
+    document.querySelectorAll('.reset-button').forEach(button => {
+        button.addEventListener('click', function () {
+            const id = this.getAttribute('data-id');        
+            const modalBody = document.querySelector('#modalPurple .modal-body');
     
+            modalBody.innerHTML = `
+                <form id="user-edit-form" class="space-y-4">
+                    <div class="form-group mb-4">
+                        <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Nueva Contraseña</label>
+                        <input type="password" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" id="password" name="password" required>
+                        <p id="password-error" class="text-red-500 text-sm mt-1 hidden">La contraseña debe ser alfanumérica y tener al menos 8 caracteres.</p>
+                    </div>
+                    <div class="form-group mb-4">
+                        <label for="password_confirmation" class="block text-gray-700 text-sm font-bold mb-2">Confirmar Contraseña</label>
+                        <input type="password" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" id="password_confirmation" name="password_confirmation" required>
+                        <p id="password-confirm-error" class="text-red-500 text-sm mt-1 hidden">Las contraseñas no coinciden.</p>
+                    </div>
+                    <button type="button" id="confirm-change-btn" class="btn btn-primary bg-blue hover:bg-cyan-200 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md">Confirmar Cambio</button>
+                </form>`;
     
+            // Validaciones de las contraseñas (misma lógica que antes)
+            const passwordInput = document.getElementById('password');
+            const passwordConfirmationInput = document.getElementById('password_confirmation');
+            const passwordError = document.getElementById('password-error');
+            const passwordConfirmError = document.getElementById('password-confirm-error');
+            const confirmButton = document.getElementById('confirm-change-btn');
     
+            const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
     
+            passwordInput.addEventListener('input', function () {
+                if (!passwordRegex.test(passwordInput.value)) {
+                    passwordError.classList.remove('hidden');
+                    confirmButton.disabled = true;
+                } else {
+                    passwordError.classList.add('hidden');
+                    confirmButton.disabled = passwordInput.value !== passwordConfirmationInput.value;
+                }
+            });
+    
+            passwordConfirmationInput.addEventListener('input', function () {
+                if (passwordInput.value !== passwordConfirmationInput.value) {
+                    passwordConfirmError.classList.remove('hidden');
+                    confirmButton.disabled = true;
+                } else {
+                    passwordConfirmError.classList.add('hidden');
+                    confirmButton.disabled = !passwordRegex.test(passwordInput.value);
+                }
+            });
+    
+            // Enviar los datos al servidor usando Fetch API cuando se presiona el botón
+            confirmButton.addEventListener('click', function () {
+                const password = passwordInput.value;
+                const passwordConfirmation = passwordConfirmationInput.value;
+    
+                // Solo continuar si las contraseñas son válidas
+                if (passwordRegex.test(password) && password === passwordConfirmation) {
+                    fetch(`/usuarios/${id}/actualizar-contrasena`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            password: password,
+                            password_confirmation: passwordConfirmation
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                title: 'Éxito',
+                                text: 'La contraseña ha sido actualizada correctamente.',
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                location.reload(); // Recargar la página o cerrar el modal
+                            });
+                        } else {
+                            if (data.errors) {
+                                // Mostrar errores de validación
+                                const errorMessages = Object.values(data.errors).flat().join('\n');
+                                Swal.fire({
+                                    title: 'Errores de validación',
+                                    text: errorMessages,
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: data.message || 'Hubo un error al actualizar la contraseña.',
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        }
+                    })
+                }
+            });
+        });
+    });
+    
+       
 });
+

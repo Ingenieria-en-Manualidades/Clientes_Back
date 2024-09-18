@@ -10,6 +10,10 @@ use Illuminate\View\View;
 
 class ClienteController extends Controller
 {
+
+
+
+    
     /**
      * Muestra una lista de los clientes.
      *
@@ -19,6 +23,7 @@ class ClienteController extends Controller
      */
     public function index(Request $request): View
     {
+        
         $clientes = Cliente::all();
         return view('clientes.index', [
             'clientes' => $clientes,
@@ -38,8 +43,8 @@ class ClienteController extends Controller
         $client = new Client();
 
         try {
-            // Realiza una solicitud GET al endpoint deseado
-            $response = $client->request('GET', 'https://imecplusdev.ienm.com.co:8443/api/cliente/list');
+            // Realiza una solicitud GET al endpoint 
+            $response = $client->request('GET', 'https://imecplus.ienm.com.co/api/cliente/list');
 
             // Obtiene el cuerpo de la respuesta
             $data = $response->getBody()->getContents();
@@ -70,7 +75,7 @@ class ClienteController extends Controller
             return redirect()->route('clientes.index')->with('error', $e->getMessage());
         }
     }
-   /**
+    /**
      * Actualiza el estado de un cliente (activar/desactivar).
      *
      * @param  \Illuminate\Http\Request  $request

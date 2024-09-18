@@ -27,36 +27,19 @@ class AuthController extends Controller
     {
         function decryptAES($encryptedHex, $keyValue)
 {
-    $salt = 'salt'; // El mismo salt que se usó para derivar la clave en el frontend
-    $iterations = 100; // Las mismas iteraciones usadas en PBKDF2
+    $salt = 'salt'; 
+    $iterations = 100; 
 
-    // Verifica que la longitud del cifrado sea al menos 32 caracteres (16 bytes para el IV)
-    if (strlen($encryptedHex) < 32) {
-        throw new Exception('La cadena cifrada es demasiado corta.');
-    }
 
-    // Valida que el texto cifrado sea un valor hexadecimal válido
-    if (!ctype_xdigit($encryptedHex)) {
-        throw new Exception('La cadena cifrada no es un valor hexadecimal válido.');
-    }
-
-    // Extraer el IV (primeros 32 caracteres hexadecimales, 16 bytes)
     $ivHex = substr($encryptedHex, 0, 32);
-    $cipherTextHex = substr($encryptedHex, 32); // El resto es el texto cifrado
+    $cipherTextHex = substr($encryptedHex, 32); 
 
-    // Convierte IV y texto cifrado de hexadecimal a binario
     $iv = hex2bin($ivHex);
     $cipherText = hex2bin($cipherTextHex);
 
-    // Derivar la clave usando PBKDF2
     $key = hash_pbkdf2('sha256', $keyValue, $salt, $iterations, 32, true);
 
-    // Desencriptar el texto cifrado usando AES-256-CBC
     $decrypted = openssl_decrypt($cipherText, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
-
-    if ($decrypted === false) {
-        throw new Exception('Error al desencriptar los datos');
-    }
 
     return $decrypted;
 }
@@ -67,7 +50,7 @@ try {
     if (!$encryptedHex) {
         throw new Exception('Datos cifrados no proporcionados.');
     }
-    $keyValue = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'; 
+    $keyValue = env('KEY_ENCRYPTED'); 
 
     $decryptedData = decryptAES($encryptedHex, $keyValue);
     $credentials = json_decode($decryptedData, true); 
@@ -88,7 +71,6 @@ try {
 
     $this->checkTooManyLoginAttempts($request);
 
-    // Intento de autenticación
     if (!Auth::attempt($credentials)) {
         $this->incrementLoginAttempts($request);
         Log::warning('Detalles de inicio de sesión inválidos:', ['name' => $credentials['name']]);
@@ -103,7 +85,7 @@ try {
     }
 
     $tokenName = 'TOKEN CLIENTE: ' . $user->name;
-    $token = $user->createToken($tokenName)->plainTextToken;
+    $token = $user->createToken($tokenName,['read', 'create', 'update', 'delete'])->plainTextToken;
     $clientesEndpointIds = $user->clientes->pluck('cliente_endpoint_id');
 
     $this->clearLoginAttempts($request);
