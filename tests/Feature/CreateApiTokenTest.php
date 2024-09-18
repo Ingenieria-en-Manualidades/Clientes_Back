@@ -25,8 +25,7 @@ class CreateApiTokenTest extends TestCase
             ->set(['createApiTokenForm' => [
                 'name' => 'Test Token',
                 'permissions' => [
-                    'read',
-                    'update',
+                    'read','create','update','delete'
                 ],
             ]])
             ->call('createApiToken');

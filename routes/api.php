@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ObjetivesController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\Admon\UserController;
 
@@ -26,3 +27,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 Route::get('borrarToken/{token}', [AuthController::class, 'deleteToken']);
 Route::post('/updatePassword', [UserController::class, 'updatePassword']);
+
+//Routes Create Objetives
+
+Route::post('/guardarObjetivos', [ObjetivesController::class, 'guardarObjetivos']);

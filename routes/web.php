@@ -6,6 +6,7 @@ use App\Http\Controllers\Admon\DashboardController;
 use App\Http\Controllers\Admon\UserController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\RoleDeleteController;
+use App\Http\Controllers\ObjetivesController;
 
 // Ruta para la página de inicio de sesión
 Route::get('/', function () {
@@ -34,7 +35,11 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::delete('roles/{id}', [RoleDeleteController::class, 'destroy'])->name('roles.destroy');
     Route::get('roles/deshabilitados', [RolePermissionController::class, 'deshabilitados'])->name('roles.deshabilitados');
     Route::get('roles/{id}/restaurar', [RolePermissionController::class, 'restaurar'])->name('roles.restaurar');
+    //Route::post('/guardarObjetivos', [ObjetivesController::class, 'guardarObjetivos']);
+
 });
+
+
 
 // Ruta de fallback para manejar URLs incorrectas
 Route::fallback(function () {

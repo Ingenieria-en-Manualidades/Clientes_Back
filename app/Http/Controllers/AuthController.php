@@ -50,7 +50,7 @@ try {
     if (!$encryptedHex) {
         throw new Exception('Datos cifrados no proporcionados.');
     }
-    $keyValue = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'; 
+    $keyValue = env('KEY_ENCRYPTED'); 
 
     $decryptedData = decryptAES($encryptedHex, $keyValue);
     $credentials = json_decode($decryptedData, true); 
@@ -85,7 +85,7 @@ try {
     }
 
     $tokenName = 'TOKEN CLIENTE: ' . $user->name;
-    $token = $user->createToken($tokenName)->plainTextToken;
+    $token = $user->createToken($tokenName,['read', 'create', 'update', 'delete'])->plainTextToken;
     $clientesEndpointIds = $user->clientes->pluck('cliente_endpoint_id');
 
     $this->clearLoginAttempts($request);
