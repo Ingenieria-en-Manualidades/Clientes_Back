@@ -183,13 +183,13 @@ try {
 
             if (!$tokenResultado) {
                 return response()->json(['success' => false, 'message' => 'Token no encontrado.', 'codigo' => 404], 404);
+            }else {
+                if (Carbon::now()->greaterThan($tokenResultado->expires_at)) {
+                    return response()->json(['success' => false, 'message' => 'Token expirado.', 'codigo' => 403], 403);
+                }else {
+                    return response()->json(['success' => true, 'message' => 'Token verificado.', 'id_username' => $tokenResultado->id_username], 200);
+                }
             }
-
-            if (Carbon::now()->greaterThan($tokenResultado->expires_at)) {
-                return response()->json(['success' => false, 'message' => 'Token expirado.', 'codigo' => 403], 403);
-            }
-
-            return response()->json(['success' => true, 'message' => 'Token verificado.', 'id_username' => $tokenResultado->id_username], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Server error.', 'error' => $e->getMessage(), 'codigo' => 500], 500);
         }
@@ -198,8 +198,6 @@ try {
     public function setVerificarLogin(Request $request)
     {
         $token = $request->user()->tokens;
-
-        Log::info('valor del token: ', ['token' => $token]);
 
         if (!$token) {
             return response()->json(['success' => false], 404);
