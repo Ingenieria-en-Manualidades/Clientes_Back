@@ -6,7 +6,7 @@
     <td class="font-bold">{{ $cliente->cliente_endpoint_id }}</td>
     <td>
         <nobr>
-          @can('GESTIONAR CLIENTES')
+          @can('Gestionar Clientes')
             <button class="btn btn-xs btn-default text-primary mx-1 shadow edit-button" 
                     title="Edit" 
                     data-toggle="modal" 
