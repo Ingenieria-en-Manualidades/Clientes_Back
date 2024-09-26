@@ -3,22 +3,20 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Objetive extends Model
+class accidentes extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'objetives';
-    protected $primaryKey = 'objetives_id';
+    protected $table = 'accidentes';
+    protected $primaryKey = 'accidentes_id';
 
     protected $fillable = [
-        'cumplimiento',
-        'eficiencia_productiva',
-        'calidad',
-        'desperdicio_me',
-        'desperdicio_pp',
+        'tipo_accidente',
+        'cantidad',
+        'fecha_ingreso',
         'tablero_id'
     ];
 

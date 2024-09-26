@@ -20,6 +20,7 @@ class ObjetivesController extends Controller
                 'desperdicioME' => 'required|string',
                 'desperdicioPP' => 'required|string',
                 'eficienciaProductiva' => 'required|string',
+                'tablero_id' => 'required|string'
             ]);
 
             // Guardar los datos en la base de datos
@@ -29,7 +30,8 @@ class ObjetivesController extends Controller
             $objetivo->calidad = $validatedData['calidad'];
             $objetivo->desperdicio_me = $validatedData['desperdicioME'];
             $objetivo->desperdicio_pp = $validatedData['desperdicioPP'];
-            $objetivo->save(); 
+            $objetivo->tablero_id = $validatedData['tablero_id'];
+            $objetivo->save();
             // Devolver una respuesta exitosa
             return response()->json([
                 'success' => true,

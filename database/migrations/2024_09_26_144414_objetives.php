@@ -12,16 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('objetives', function (Blueprint $table) {
-            $table->id();
+            $table->id('objetives_id');
             $table->string('cumplimiento');
             $table->string('eficiencia_productiva');
             $table->string('calidad');
             $table->string('desperdicio_me');
             $table->string('desperdicio_pp');
+            $table->unsignedBigInteger('tablero_id');
+            $table->softDeletes();
             $table->timestamps();
+            $table->foreign('tablero_id')->references('tablero_id')->on('tablero_sae');
         });
-
-        
     }
 
     /**

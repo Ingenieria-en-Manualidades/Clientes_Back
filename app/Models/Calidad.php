@@ -3,22 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Objetive extends Model
+class Calidad extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'objetives';
-    protected $primaryKey = 'objetives_id';
+    protected $table = 'calidad';
+    protected $primaryKey = 'calidad_id';
 
     protected $fillable = [
-        'cumplimiento',
-        'eficiencia_productiva',
-        'calidad',
-        'desperdicio_me',
-        'desperdicio_pp',
+        'checklist_mes',
+        'checklist_calificacion',
+        'inspeccion_mes',
+        'inspeccion_calificacion',
         'tablero_id'
     ];
 
