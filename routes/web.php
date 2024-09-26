@@ -3,11 +3,13 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admon\ClienteController;
 use App\Http\Controllers\Admon\DashboardController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\Admon\UserController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\RoleDeleteController;
 use App\Http\Middleware\RedirectIfNotAdmin;
 use App\Http\Controllers\ObjetivesController;
+
 
 // Ruta para la página de inicio de sesión
 Route::get('/', function () {
@@ -44,6 +46,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::get('roles/deshabilitados', [RolePermissionController::class, 'deshabilitados'])->name('roles.deshabilitados');
     Route::get('roles/{id}/restaurar', [RolePermissionController::class, 'restaurar'])->name('roles.restaurar');
     Route::post('permissions', [RolePermissionController::class, 'storePermission'])->name('permissions.store');
+
+    // Rutas para permisos
+    Route::resource('permisos', PermissionController::class)->except(['create', 'show']);
 
     //Route::post('/guardarObjetivos', [ObjetivesController::class, 'guardarObjetivos']);
 

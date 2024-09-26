@@ -339,16 +339,24 @@ return [
         ],
         [
             'text' => 'Administracion',
-            'icon' => 'fas fa-fw fa-users',
+            'icon' => 'fas fa-cogs',
             'submenu' => [
                 [
                     'text' => 'Roles',
                     'url' => 'roles',
+                    'icon' => 'fas fa-user-shield',
+                ],
+                [
+                    'text'         => 'Permisos',
+                    'url'          => 'permisos',
+                    'icon'         => 'fas fa-lock-open',
+                    'role' => 'admin',
                 ],
                 
                 [
                     'text' => 'Usuarios',
                     'url' => 'usuarios',
+                    'icon'         => 'fas fa-users',
                 ],
                 [
                     'text'         => 'Admin. Tokens',

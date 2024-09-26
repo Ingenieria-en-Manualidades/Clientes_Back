@@ -3,7 +3,7 @@
 @section('title', 'Roles')
 
 @section('content_header')
-    <h1>Roles</h1>
+    <h1>Permisos</h1>
 @stop
 
 @section('content')
@@ -11,23 +11,21 @@
 @include('partials.alerts')
 <div class="flex justify-between mb-4">
     <div class="flex justify-start space-x-4"> 
-        @include('partials.roles.create_button')
+        @include('partials.permisos.create_permission_button')
     </div>
-    @include('partials.roles.trash_button')
 </div>
 
     @php
     $heads = [
         'ID',
-        'Rol',
-        'Permisos',
+        'Nombres Permisos',
         ['label' => 'Acciones', 'no-export' => true, 'width' => 5],
     ];
     @endphp
 
     <x-adminlte-datatable id="table3" :heads="$heads" head-theme="dark" theme="light" striped hoverable>
-        @foreach($roles as $role)
-            <x-role-row :role="$role" />
+        @foreach($permissions as $permission)
+            <x-permission-row :permission="$permission" />
         @endforeach
     </x-adminlte-datatable>
     @include('modals.modal')
@@ -46,7 +44,7 @@
     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.2.2/dist/cdn.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="{{ asset('js/rol.js') }}"></script>
+    <script src="{{ asset('js/permisos.js') }}"></script>
     <script>
         $(document).ready(function() {
             $('#table3').DataTable();
