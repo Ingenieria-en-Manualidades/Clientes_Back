@@ -362,7 +362,7 @@ return [
                     'text'         => 'Admin. Tokens',
                     'url'          => 'user/api-tokens',
                     'icon'         => 'fas fa-key',
-                    'role' => 'admin',
+                    'can' => 'Gestionar Token',
                 ],
             ],
         ],

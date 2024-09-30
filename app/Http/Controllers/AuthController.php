@@ -17,11 +17,12 @@ use Exception;
 class AuthController extends Controller
 {
     /**
-     * Maneja la solicitud de inicio de sesión de un usuario en el frontend.
+     * Maneja la solicitud de inicio de sesión de un usuario.
      *
-     * @desc Este método valida las credenciales del usuario, intenta autenticarlas y, si tiene éxito, genera un token de acceso.
-     * @param Request $request La solicitud HTTP que contiene las credenciales del usuario.
-     * @return \Illuminate\Http\JsonResponse La respuesta JSON con el token de acceso o un mensaje de error.
+     * @desc Este método toma los datos cifrados de las credenciales, los desencripta, y valida al usuario.
+     *       Si la autenticación es exitosa, se genera un token de acceso para el usuario.
+     * @param Request $request La solicitud HTTP que contiene los datos cifrados del usuario.
+     * @return \Illuminate\Http\JsonResponse Respuesta con el token de acceso o un mensaje de error.
      */
     public function login(Request $request)
     {
@@ -29,7 +30,6 @@ class AuthController extends Controller
 {
     $salt = 'salt'; 
     $iterations = 100; 
-
 
     $ivHex = substr($encryptedHex, 0, 32);
     $cipherTextHex = substr($encryptedHex, 32); 
@@ -103,18 +103,28 @@ try {
 
 }
 
-    /**
-     * Maneja la solicitud de cierre de sesión de un usuario.
+     /**
+     * Cierra la sesión de un usuario autenticado.
      *
-     * @desc Este método revoca el token de acceso actual del usuario, cerrando su sesión.
-     * @param Request $request La solicitud HTTP que contiene la información del usuario.
-     * @return \Illuminate\Http\JsonResponse La respuesta JSON con un mensaje de éxito.
+     * @desc Este método elimina el token de acceso actual del usuario, cerrando su sesión activa.
+     * @param Request $request La solicitud HTTP que contiene la sesión activa del usuario.
+     * @return \Illuminate\Http\JsonResponse Respuesta confirmando el cierre de sesión.
      */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Sesión cerrada con éxito']);
     }
+
+
+    /**
+     * Verifica si un usuario ha excedido el número de intentos de inicio de sesión permitidos.
+     *
+     * @desc Utiliza el RateLimiter para controlar la cantidad de intentos fallidos de inicio de sesión.
+     *       Si se excede el límite, se lanza una excepción.
+     * @param Request $request La solicitud HTTP que contiene las credenciales de inicio de sesión.
+     * @throws ValidationException Si se exceden los intentos permitidos.
+     */
 
     protected function checkTooManyLoginAttempts(Request $request)
     {
@@ -128,6 +138,15 @@ try {
             ]);
         }
     }
+
+    /**
+     * Genera un token para la recuperación de contraseña.
+     *
+     * @desc Valida la dirección de correo electrónico proporcionada, genera un token y lo almacena
+     *       en la base de datos junto con la información del usuario.
+     * @param Request $request La solicitud HTTP que contiene el correo electrónico del usuario.
+     * @return \Illuminate\Http\JsonResponse Respuesta con el token de recuperación de contraseña.
+     */
 
     public function generateToken(Request $request)
     {
@@ -158,6 +177,14 @@ try {
         return response()->json(['token' => $token], 200);
     }
 
+     /**
+     * Verifica si un token de recuperación de contraseña es válido.
+     *
+     * @desc Este método valida el token proporcionado, verificando su existencia y si ha expirado.
+     * @param string $token El token a verificar.
+     * @return \Illuminate\Http\JsonResponse Respuesta que indica si el token es válido o no.
+     */
+
     public function setVerificarToken($token)
     {
         try{
@@ -177,6 +204,14 @@ try {
         }
     }
 
+     /**
+     * Verifica si el usuario actual está autenticado y tiene un token válido.
+     *
+     * @desc Revisa si el usuario tiene un token de sesión válido.
+     * @param Request $request La solicitud HTTP del usuario autenticado.
+     * @return \Illuminate\Http\JsonResponse Respuesta indicando si el usuario está autenticado.
+     */
+
     public function setVerificarLogin(Request $request)
     {
         $token = $request->user()->tokens;
@@ -187,6 +222,14 @@ try {
             return response()->json(['success' => true], 200);
         }
     }
+
+    /**
+     * Elimina un token de recuperación de contraseña de la base de datos.
+     *
+     * @desc Este método borra el token de recuperación de contraseña asociado con el usuario.
+     * @param string $token El token a eliminar.
+     * @return \Illuminate\Http\JsonResponse Respuesta indicando el éxito o fallo del proceso.
+     */
 
     public function deleteToken($token)
     {
@@ -200,15 +243,37 @@ try {
         }
     }
 
+    /**
+     * Incrementa el contador de intentos fallidos de inicio de sesión para un usuario.
+     *
+     * @desc Utiliza el RateLimiter para incrementar el contador de intentos de login fallidos.
+     * @param Request $request La solicitud HTTP con las credenciales del usuario.
+     */
+
     protected function incrementLoginAttempts(Request $request)
     {
         RateLimiter::hit($this->throttleKey($request), 60);
     }
+    
+     /**
+     * Limpia el contador de intentos fallidos de inicio de sesión tras un inicio exitoso.
+     *
+     * @desc Utiliza el RateLimiter para limpiar el registro de intentos fallidos de login.
+     * @param Request $request La solicitud HTTP con las credenciales del usuario.
+     */
 
     protected function clearLoginAttempts(Request $request)
     {
         RateLimiter::clear($this->throttleKey($request));
     }
+
+     /**
+     * Genera una clave única para el control de intentos de inicio de sesión por usuario.
+     *
+     * @desc Combina el nombre de usuario y la dirección IP para crear una clave única para cada usuario.
+     * @param Request $request La solicitud HTTP con las credenciales del usuario.
+     * @return string La clave de control para el RateLimiter.
+     */
 
     protected function throttleKey(Request $request)
     {
