@@ -19,11 +19,11 @@ class Objetive extends Model
         'calidad',
         'desperdicio_me',
         'desperdicio_pp',
-        'tablero_id'
+        'tablero_id',
     ];
 
     public function tablero_sae()
     {
-        return $this->belongsTo(Tablero_Sae::class, 'tablero_id', 'tablero_id')
+        return $this->belongsTo(Tablero_Sae::class, 'tablero_id', 'tablero_id');
     }
 }

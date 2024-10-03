@@ -13,9 +13,13 @@ return new class extends Migration
     {
         Schema::create('produccion', function (Blueprint $table) {
             $table->id('produccion_id');
+            $table->timestamp('fecha_produccion');
             $table->integer('planificada');
-            $table->integer('plan_armado');
-            $table->integer('modificada');
+            $table->integer('modificada')->nullable();
+            $table->integer('plan_armado')->nullable();
+            $table->integer('calidad')->nullable();
+            $table->integer('desperfecto_me')->nullable();
+            $table->integer('desperfecto_pp')->nullable();
             $table->unsignedBigInteger('tablero_id');
             $table->softDeletes();
             $table->timestamps();

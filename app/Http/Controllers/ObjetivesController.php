@@ -10,9 +10,9 @@ class ObjetivesController extends Controller
 {
     public function guardarObjetivos(Request $request)
     {
-        //\Log::info('Solicitud POST recibida en guardarObjetivos', $request->all());
+        // Log::info('Solicitud POST recibida en guardarObjetivos', $request->all());
         
-                try {
+        try {
             // Validar los datos entrantes
             $validatedData = $request->validate([
                 'calidad' => 'required|string',
@@ -20,7 +20,7 @@ class ObjetivesController extends Controller
                 'desperdicioME' => 'required|string',
                 'desperdicioPP' => 'required|string',
                 'eficienciaProductiva' => 'required|string',
-                'tablero_id' => 'required|string'
+                'tablero_id' => 'required|integer'
             ]);
 
             // Guardar los datos en la base de datos
@@ -33,15 +33,11 @@ class ObjetivesController extends Controller
             $objetivo->tablero_id = $validatedData['tablero_id'];
             $objetivo->save();
             // Devolver una respuesta exitosa
-            return response()->json([
-                'success' => true,
-                'message' => 'Objetivo creado con éxito',
-                'data' => $request
-            ], 201);
+            return response()->json(['success' => true,'message' => 'Objetivo creado con éxito', 'data' => $request], 200);
         } catch (ValidationException $e) {
             // Si la validación falla, se capturan los errores y se devuelven
             return response()->json([
-                'message' => 'Error en la validación de los datos',
+                'message' => 'Error en la validación de los datos de objetivos',
                 'errors' => $request
             ], 422);
         } catch (\Exception $e) {

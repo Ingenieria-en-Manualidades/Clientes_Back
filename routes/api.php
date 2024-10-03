@@ -6,6 +6,12 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ObjetivesController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\Admon\UserController;
+use App\Http\Controllers\CalidadController;
+use App\Http\Controllers\AccidentesController;
+use App\Http\Controllers\ProduccionController;
+use App\Http\Controllers\Tablero_SaeController;
+use App\Http\Controllers\IndicadoresController;
+use App\Http\Controllers\PermissionController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -29,5 +35,28 @@ Route::get('borrarToken/{token}', [AuthController::class, 'deleteToken']);
 Route::post('/updatePassword', [UserController::class, 'updatePassword']);
 
 //Routes Create Objetives
-
 Route::post('/guardarObjetivos', [ObjetivesController::class, 'guardarObjetivos']);
+
+//Routes Calidad
+//Create
+Route::post('/guardarCalidad', [CalidadController::class, 'guardarCalidad']);
+
+//Routes Accidente
+//Create
+Route::post('/guardarAccidente', [AccidentesController::class, 'guardarAccidentes']);
+
+//Routes Produccion
+//Create
+Route::post('/guardarProduccion', [ProduccionController::class, 'guardarProduccion']);
+
+//Routes Tablero
+//Create
+Route::post('/guardarTablero', [Tablero_SaeController::class, 'guardarTablero']);
+
+//Routes Indicadores
+//Create
+Route::post('/guardarIndicador', [IndicadoresController::class, 'guardarIndicadores']);
+
+//Routes Usuario y permiso
+//Create
+Route::post('/relacionarUsuarioPermiso', [PermissionController::class, 'guardarUserPermission']);

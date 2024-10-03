@@ -32,6 +32,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+        'id',
         'name',
         'email',
         'password',
@@ -82,7 +83,12 @@ class User extends Authenticatable
     }
 
     public function cliente_endpoint()
-{
-    return $this->hasOne(Cliente::class);
-}
+    {
+        return $this->hasOne(Cliente::class);
+    }
+
+    public function permissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Permission::class, 'user_permission', 'user_id', 'permission_id');
+    }
 }

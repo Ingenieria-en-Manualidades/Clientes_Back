@@ -23,6 +23,6 @@ class Calidad extends Model
 
     public function tablero_sae()
     {
-        return $this->belongsTo(Tablero_Sae::class, 'tablero_id', 'tablero_id')
+        return $this->belongsTo(Tablero_Sae::class, 'tablero_id', 'tablero_id');
     }
 }

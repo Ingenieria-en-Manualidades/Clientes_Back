@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class accidentes extends Model
+class accidente extends Model
 {
     use HasFactory, SoftDeletes;
 
@@ -17,11 +17,11 @@ class accidentes extends Model
         'tipo_accidente',
         'cantidad',
         'fecha_ingreso',
-        'tablero_id'
+        'tablero_id',
     ];
 
     public function tablero_sae()
     {
-        return $this->belongsTo(Tablero_Sae::class, 'tablero_id', 'tablero_id')
+        return $this->belongsTo(Tablero_Sae::class, 'tablero_id', 'tablero_id');
     }
 }

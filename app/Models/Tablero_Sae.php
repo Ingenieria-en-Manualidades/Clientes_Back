@@ -34,4 +34,9 @@ class Tablero_Sae extends Model
     {
         return $this->hasMany(Produccion::class, 'tablero_id', 'tablero_id');
     }
+
+    public function indicadores()
+    {
+        return $this->hasMany(Indicadores::class, 'tablero_id', 'tablero_id');
+    }
 }
