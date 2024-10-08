@@ -53,10 +53,6 @@ Route::post('/guardarProduccion', [ProduccionController::class, 'guardarProducci
 //Create
 Route::post('/guardarTablero', [Tablero_SaeController::class, 'guardarTablero']);
 
-//Routes Indicadores
-//Create
-Route::post('/guardarIndicador', [IndicadoresController::class, 'guardarIndicadores']);
-
 //Routes Usuario y permiso
 //Create
 Route::post('/relacionarUsuarioPermiso', [PermissionController::class, 'guardarUserPermission']);

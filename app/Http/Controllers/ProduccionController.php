@@ -13,11 +13,11 @@ class ProduccionController extends Controller
             $validatedData = $request->validate([
                 'fecha_produccion' => 'required|string',
                 'planificada' => 'required|integer',
-                'modificada' => 'required|integer',
-                'plan_armado' => 'required|integer',
-                'calidad' => 'required|integer',
-                'desperfecto_me' => 'required|integer',
-                'desperfecto_pp' => 'required|integer',
+                'modificada' => 'nullable|integer',
+                'plan_armado' => 'nullable|integer',
+                'calidad' => 'nullable|integer',
+                'desperfecto_me' => 'nullable|integer',
+                'desperfecto_pp' => 'nullable|integer',
                 'tablero_id' => 'required|integer',
             ]);
 
