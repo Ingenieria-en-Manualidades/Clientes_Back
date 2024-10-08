@@ -8,6 +8,7 @@ use App\Models\TokensPassword;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -79,6 +80,15 @@ try {
 
     $user = Auth::user();
 
+    $permissions = DB::table('user_permission')
+    ->join('users', 'users.id', '=', 'user_permission.user_id')
+    ->join('permissions', 'permissions.id', '=', 'user_permission.permission_id')
+    ->select('permissions.name')
+    ->where('users.id', $user->id)
+    ->get();
+
+    Log::info("PERMISOS: ", ['permisos' => $permissions]);
+
     if ($user->activo === 'n') {
         Auth::logout();
         return response()->json(['title' => 'Usuario inactivo', 'message' => 'Este cliente está inactivo'], 403);
@@ -93,7 +103,8 @@ try {
     return response()->json([
         'access_token' => $token,
         'token_type' => 'Bearer',
-        'clientes_endpoint_ids' => $clientesEndpointIds
+        'clientes_endpoint_ids' => $clientesEndpointIds,
+        'permissions' => $permissions
     ]);
 
 } catch (Exception $e) {
