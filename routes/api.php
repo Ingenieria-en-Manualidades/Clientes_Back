@@ -47,7 +47,9 @@ Route::post('/guardarAccidente', [AccidentesController::class, 'guardarAccidente
 
 //Routes Produccion
 //Create
-Route::post('/guardarProduccion', [ProduccionController::class, 'guardarProduccion']);
+Route::post('/guardarProduccion', [ProduccionController::class, 'create']);
+//Update
+Route::post('/actualizarProduccion', [ProduccionController::class, 'update']);
 
 //Routes Tablero
 //Create
