@@ -14,15 +14,13 @@ class Calidad extends Model
     protected $primaryKey = 'calidad_id';
 
     protected $fillable = [
-        'checklist_mes',
-        'checklist_calificacion',
-        'inspeccion_mes',
-        'inspeccion_calificacion',
-        'tablero_id'
+        'checklist',
+        'inspeccion',
+        'meta_id'
     ];
 
-    public function tablero_sae()
+    public function meta()
     {
-        return $this->belongsTo(Tablero_Sae::class, 'tablero_id', 'tablero_id');
+        return $this->belongsTo(Meta::class, 'meta_id', 'meta_id');
     }
 }

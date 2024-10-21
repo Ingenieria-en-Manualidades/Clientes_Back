@@ -3,15 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Objetive extends Model
+class Meta extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'objetives';
-    protected $primaryKey = 'objetives_id';
+    protected $table = 'meta';
+    protected $primaryKey = 'meta_id';
 
     protected $fillable = [
         'cumplimiento',
@@ -19,11 +19,15 @@ class Objetive extends Model
         'calidad',
         'desperdicio_me',
         'desperdicio_pp',
-        'tablero_id',
     ];
 
     public function tablero_sae()
     {
-        return $this->belongsTo(Tablero_Sae::class, 'tablero_id', 'tablero_id');
+        return $this->hasMany(Tablero_Sae::class, 'meta_id', 'meta_id');
+    }
+
+    public function calidad()
+    {
+        return $this->hasMany(Calidad::class, 'meta_id', 'meta_id');
     }
 }
