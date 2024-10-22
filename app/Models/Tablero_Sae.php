@@ -13,20 +13,25 @@ class Tablero_Sae extends Model
     protected $table = 'tablero_sae';
     protected $primaryKey = 'tablero_sae_id';
 
-    protected $fillable = ['id_cliente', 'fecha', 'tablero_sae_id'];
+    protected $fillable = ['fecha', 'meta_id', 'cliente_id'];
 
-    public function objetives()
+    public function objetivos()
     {
-        return $this->hasMany(Objetive::class, 'tablero_id', 'tablero_id');
+        return $this->hasMany(Objetivo::class, 'tablero_sae_id', 'tablero_sae_id');
     }
 
     public function files()
     {
-        return $this->hasMany(File::class, 'tablero_id', 'tablero_id');
+        return $this->hasMany(File::class, 'tablero_sae_id', 'tablero_sae_id');
     }
 
     public function meta()
     {
         return $this->belongsTo(Meta::class, 'meta_id', 'meta_id');
+    }
+
+    public function clientes()
+    {
+        return $this->belongsTo(Cliente::class, 'id', 'id');
     }
 }

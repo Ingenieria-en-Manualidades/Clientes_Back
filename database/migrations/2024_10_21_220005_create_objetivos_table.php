@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('objetivos', function (Blueprint $table) {
             $table->id('objetivos_id');
             $table->integer('planificada');
-            $table->integer('modificada');
-            $table->integer('plan_armado');
-            $table->integer('calidad');
-            $table->integer('desperfecto_me');
-            $table->integer('desperfecto_pp');
+            $table->integer('modificada')->nullable();
+            $table->integer('plan_armado')->nullable();
+            $table->integer('calidad')->nullable();
+            $table->integer('desperfecto_me')->nullable();
+            $table->integer('desperfecto_pp')->nullable();
             $table->unsignedBigInteger('tablero_sae_id');
             $table->softDeletes();
             $table->timestamps();

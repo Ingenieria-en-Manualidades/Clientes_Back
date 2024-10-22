@@ -9,24 +9,20 @@ use Illuminate\Validation\ValidationException;
 
 class CalidadController extends Controller
 {
-    public function guardarCalidad(Request $request){
+    public function create(Request $request){
         try {
             // Validar los datos entrantes
             $validatedData = $request->validate([
-                'checklist_mes' => 'required|string',
-                'checklist_calificacion' => 'required|integer',
-                'inspeccion_mes' => 'required|string',
-                'inspeccion_calificacion' => 'required|integer',
-                'tablero_id' => 'required|integer'
+                'checklist' => 'required|integer',
+                'inspeccion' => 'required|integer',
+                'meta_id' => 'required|integer'
             ]);
 
             // Guardar los datos en la base de datos
             $calidad = new Calidad();
-            $calidad->checklist_mes = $validatedData['checklist_mes'];
-            $calidad->checklist_calificacion = $validatedData['checklist_calificacion'];
-            $calidad->inspeccion_mes = $validatedData['inspeccion_mes'];
-            $calidad->inspeccion_calificacion = $validatedData['inspeccion_calificacion'];
-            $calidad->tablero_id = $validatedData['tablero_id'];
+            $calidad->checklist = $validatedData['checklist'];
+            $calidad->inspeccion = $validatedData['inspeccion'];
+            $calidad->meta_id = $validatedData['meta_id'];
             $calidad->save();
 
             // Devolver una respuesta exitosa en caso de no fallar

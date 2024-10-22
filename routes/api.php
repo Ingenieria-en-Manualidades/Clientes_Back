@@ -3,12 +3,12 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ObjetivesController;
+use App\Http\Controllers\MetaController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\Admon\UserController;
 use App\Http\Controllers\CalidadController;
 use App\Http\Controllers\AccidentesController;
-use App\Http\Controllers\ProduccionController;
+use App\Http\Controllers\ObjetivoController;
 use App\Http\Controllers\Tablero_SaeController;
 use App\Http\Controllers\IndicadoresController;
 use App\Http\Controllers\PermissionController;
@@ -34,26 +34,26 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::get('borrarToken/{token}', [AuthController::class, 'deleteToken']);
 Route::post('/updatePassword', [UserController::class, 'updatePassword']);
 
-//Routes Create Objetives
-Route::post('/guardarObjetivos', [ObjetivesController::class, 'guardarObjetivos']);
+//Routes Create Meta
+Route::post('/guardarMeta', [MetaController::class, 'create']);
 
 //Routes Calidad
 //Create
-Route::post('/guardarCalidad', [CalidadController::class, 'guardarCalidad']);
+Route::post('/guardarCalidad', [CalidadController::class, 'create']);
 
 //Routes Accidente
 //Create
-Route::post('/guardarAccidente', [AccidentesController::class, 'guardarAccidentes']);
+Route::post('/guardarAccidente', [AccidentesController::class, 'create']);
 
-//Routes Produccion
+//Routes Objetivos
 //Create
-Route::post('/guardarProduccion', [ProduccionController::class, 'create']);
+Route::post('/guardarObjetivos', [ObjetivoController::class, 'create']);
 //Update
-Route::post('/actualizarProduccion', [ProduccionController::class, 'update']);
+Route::post('/actualizarProduccion', [ObjetivoController::class, 'update']);
 
 //Routes Tablero
 //Create
-Route::post('/guardarTablero', [Tablero_SaeController::class, 'guardarTablero']);
+Route::post('/guardarTablero', [Tablero_SaeController::class, 'create']);
 
 //Routes Usuario y permiso
 //Create

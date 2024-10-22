@@ -2,41 +2,40 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Produccion;
 use Illuminate\Http\Request;
+use App\Models\Objetivo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
-class ProduccionController extends Controller
+class ObjetivoController extends Controller
 {
     public function create(Request $request){
         try {
             // Validar los datos entrantes
             $validatedData = $request->validate([
-                'fecha_produccion' => 'required|string',
                 'planificada' => 'required|integer',
                 'modificada' => 'nullable|integer',
                 'plan_armado' => 'nullable|integer',
                 'calidad' => 'nullable|integer',
                 'desperfecto_me' => 'nullable|integer',
                 'desperfecto_pp' => 'nullable|integer',
-                'tablero_id' => 'required|integer',
+                'tablero_sae_id' => 'required|integer',
             ]);
 
             // Guardar los datos en la base de datos
-            $produccion = new Produccion();
-            $produccion->fecha_produccion = $validatedData['fecha_produccion'];
-            $produccion->planificada = $validatedData['planificada'];
-            $produccion->modificada = $validatedData['modificada'];
-            $produccion->plan_armado = $validatedData['plan_armado'];
-            $produccion->calidad = $validatedData['calidad'];
-            $produccion->desperfecto_me = $validatedData['desperfecto_me'];
-            $produccion->desperfecto_pp = $validatedData['desperfecto_pp'];
-            $produccion->tablero_id = $validatedData['tablero_id'];
-            $produccion->save();
+            $objetivo = new Objetivo();
+            $objetivo->planificada = $validatedData['planificada'] ?? null;
+            $objetivo->modificada = $validatedData['modificada'] ?? null;
+            $objetivo->plan_armado = $validatedData['plan_armado'] ?? null;
+            $objetivo->calidad = $validatedData['calidad'] ?? null;
+            $objetivo->desperfecto_me = $validatedData['desperfecto_me'] ?? null;
+            $objetivo->desperfecto_pp = $validatedData['desperfecto_pp'] ?? null;
+            $objetivo->tablero_sae_id = $validatedData['tablero_sae_id'] ?? null;
+            $objetivo->save();
 
             // Devolver una respuesta exitosa en caso de no fallar
-            return response()->json(['success' => true,'message' => 'Producción creado con éxito.', 'data' => $request], 200);
+            return response()->json(['success' => true,'message' => 'Objetivo creado con éxito.', 'data' => $request], 200);
         } catch (ValidationException $e) {
             // Si la validación falla, se capturan los errores y se devuelven
             return response()->json([
@@ -46,7 +45,7 @@ class ProduccionController extends Controller
         } catch (\Exception $e) {
             // Si ocurre cualquier otro error, devolver un error general
             return response()->json([
-                'message' => 'Ha ocurrido un error al guardar la producción.',
+                'message' => 'Ha ocurrido un error al guardar los objetivos.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -59,7 +58,8 @@ class ProduccionController extends Controller
         try {
             // Validar los datos entrantes
             $validatedData = $request->validate([
-                'fecha_produccion' => 'required|string',
+                'fecha' => 'required|string',
+                'cliente_id' => 'required|integer',
                 'planificada' => 'nullable|integer',
                 'modificada' => 'nullable|integer',
                 'plan_armado' => 'nullable|integer',
@@ -69,17 +69,21 @@ class ProduccionController extends Controller
             ]);
             
             // Consultar la producción por fecha para tener la de ID de la producción que queremos actualizar 
-            $resultadoMySql = DB::table('produccion')
-            ->select('produccion.produccion_id')
-            ->where('produccion.fecha_produccion', 'like', $validatedData['fecha_produccion'] . '%')
+            $resultadoMySql = DB::table('objetivos')
+            ->select('objetivos.objetivos_id')
+            ->join('tablero_sae', 'tablero_sae.tablero_sae_id', '=', 'objetivos.tablero_sae_id')
+            ->join('clientes', 'clientes.id', '=', 'tablero_sae.cliente_id')
+            ->where('objetivos.created_at', 'like', $validatedData['fecha'] . '%')
+            ->where('clientes.cliente_endpoint_id', '=', $validatedData['cliente_id'])
             ->get();
 
+            Log::info('Resultados en mysql', $resultadoMySql->toArray());
             //Revisamos si la consultar trajo un resultado
             if ($resultadoMySql->isEmpty()) {
                 return response()->json(['message' => 'No existe una producción con esa fecha.','errors' => $request], 404);
             }else {
                 // Obtenemos la producción que actualizaremos con el método "save" ya hecho
-                $produccion = Produccion::findOrFail($resultadoMySql[0]->produccion_id);
+                $objetivo = Objetivo::findOrFail($resultadoMySql[0]->objetivos_id);
             }
 
             // En caso de que alguno de estos datos no exista se reemplazara por 'false'
@@ -89,16 +93,16 @@ class ProduccionController extends Controller
 
             // Verifica que dato fue el que pidio el usuario para modificar, el primero que no sea 'false' sera el modificado
             if ($planificada) {
-                $produccion->planificada = $planificada;
+                $objetivo->planificada = $planificada;
             }else {
                 if ($modificada) {
-                    $produccion->modificada = $modificada;
+                    $objetivo->modificada = $modificada;
                 }else {
                     if ($indicadores) {
-                        $produccion->plan_armado = $validatedData['plan_armado'];
-                        $produccion->calidad = $validatedData['calidad'];
-                        $produccion->desperfecto_me = $validatedData['desperfecto_me'];
-                        $produccion->desperfecto_pp = $validatedData['desperfecto_pp'];
+                        $objetivo->plan_armado = $validatedData['plan_armado'];
+                        $objetivo->calidad = $validatedData['calidad'];
+                        $objetivo->desperfecto_me = $validatedData['desperfecto_me'];
+                        $objetivo->desperfecto_pp = $validatedData['desperfecto_pp'];
                     }else {
                         // Retorna en caso de que no haya llegado un dato para modificar y asi no guarda nada
                         return response()->json(['success' => false, 'message' => 'Ningún cambio hecho'], 404);
@@ -106,7 +110,7 @@ class ProduccionController extends Controller
                 }
             }
             //Guarda los cambios que se hayan hecho en los if's
-            $produccion->save();
+            $objetivo->save();
 
             return response()->json(['success' => true, 'message' => 'Actualización hecha con éxito'], 200);
         } catch (ValidationException $e) {

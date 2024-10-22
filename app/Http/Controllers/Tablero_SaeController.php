@@ -4,19 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Models\Tablero_Sae;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class Tablero_SaeController extends Controller
 {
-    public function guardarTablero(Request $request){
+    public function create(Request $request){
         try {
             // Validar los datos entrantes
             $validatedData = $request->validate([
-                'mes' => 'required|string',
+                'fecha' => 'required|string',
+                'meta_id' => 'required|string',
+                'cliente_id' => 'required|string',
             ]);
 
             // Guardar los datos en la base de datos
             $tablero = new Tablero_Sae();
-            $tablero->mes = $validatedData['mes'];
+            $tablero->fecha = $validatedData['fecha'];
+            $tablero->meta_id = $validatedData['meta_id'];
+            $tablero->cliente_id = $validatedData['cliente_id'];
             $tablero->save();
 
             // Devolver una respuesta exitosa en caso de no fallar

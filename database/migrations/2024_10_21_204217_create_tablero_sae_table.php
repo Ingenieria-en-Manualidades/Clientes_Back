@@ -13,12 +13,13 @@ return new class extends Migration
     {
         Schema::create('tablero_sae', function (Blueprint $table) {
             $table->id('tablero_sae_id');
-            $table->integer('id_cliente');
             $table->timestamp('fecha');
             $table->unsignedBigInteger('meta_id');
+            $table->unsignedBigInteger('cliente_id');
             $table->softDeletes();
             $table->timestamps();
             $table->foreign('meta_id')->references('meta_id')->on('meta');
+            $table->foreign('cliente_id')->references('id')->on('clientes');
         });
     }
 

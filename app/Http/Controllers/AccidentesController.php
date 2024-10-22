@@ -8,22 +8,20 @@ use Illuminate\Validation\ValidationException;
 
 class accidentesController extends Controller
 {
-    public function guardarAccidentes(Request $request){
+    public function create(Request $request){
         try {
             // Validar los datos entrantes
             $validatedData = $request->validate([
                 'tipo_accidente' => 'required|string',
                 'cantidad' => 'required|integer',
-                'fecha_ingreso' => 'required|string',
-                'tablero_id' => 'required|integer',
+                'objetivos_id' => 'required|integer',
             ]);
 
             // Guardar los datos en la base de datos
             $accidente = new Accidente();
             $accidente->tipo_accidente = $validatedData['tipo_accidente'];
             $accidente->cantidad = $validatedData['cantidad'];
-            $accidente->fecha_ingreso = $validatedData['fecha_ingreso'];
-            $accidente->tablero_id = $validatedData['tablero_id'];
+            $accidente->objetivos_id = $validatedData['objetivos_id'];
             $accidente->save();
 
             // Devolver una respuesta exitosa en caso de no fallar

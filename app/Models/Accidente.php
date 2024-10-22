@@ -16,12 +16,16 @@ class accidente extends Model
     protected $fillable = [
         'tipo_accidente',
         'cantidad',
-        'fecha_ingreso',
-        'tablero_id',
+        'objetivos_id',
     ];
 
-    public function tablero_sae()
+    public function accidentes()
     {
-        return $this->belongsTo(Tablero_Sae::class, 'tablero_id', 'tablero_id');
+        return $this->hasMany(Accidente::class, 'accidentes_id', 'accidentes_id');
+    }
+
+    public function objetivos()
+    {
+        return $this->belongsTo(Objetivo::class, 'objetivos_id', 'objetivos_id');
     }
 }

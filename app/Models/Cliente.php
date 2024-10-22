@@ -11,10 +11,18 @@ class Cliente extends Model
 {
     use HasFactory, SoftDeletes; 
 
-    protected $fillable = ['nombre', 'cliente_endpoint_id'];
+    protected $table = 'clientes';
+    protected $primaryKey = 'id';
+
+    protected $fillable = ['nombre', 'cliente_endpoint_id', 'activo'];
 
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class);
+    }
+
+    public function tablero_sae()
+    {
+        return $this->hasMany(Tablero_Sae::class, 'id', 'id');
     }
 }
