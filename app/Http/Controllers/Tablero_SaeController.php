@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cliente;
 use App\Models\Tablero_Sae;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class Tablero_SaeController extends Controller
@@ -13,8 +15,8 @@ class Tablero_SaeController extends Controller
             // Validar los datos entrantes
             $validatedData = $request->validate([
                 'fecha' => 'required|string',
-                'meta_id' => 'required|string',
-                'cliente_id' => 'required|string',
+                'meta_id' => 'required|integer',
+                'cliente_id' => 'required|integer',
             ]);
 
             // Guardar los datos en la base de datos

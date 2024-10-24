@@ -77,7 +77,6 @@ class ObjetivoController extends Controller
             ->where('clientes.cliente_endpoint_id', '=', $validatedData['cliente_id'])
             ->get();
 
-            Log::info('Resultados en mysql', $resultadoMySql->toArray());
             //Revisamos si la consultar trajo un resultado
             if ($resultadoMySql->isEmpty()) {
                 return response()->json(['message' => 'No existe una producción con esa fecha.','errors' => $request], 404);

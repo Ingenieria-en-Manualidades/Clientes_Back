@@ -49,7 +49,7 @@ Route::post('/guardarAccidente', [AccidentesController::class, 'create']);
 //Create
 Route::post('/guardarObjetivos', [ObjetivoController::class, 'create']);
 //Update
-Route::post('/actualizarProduccion', [ObjetivoController::class, 'update']);
+Route::post('/actualizarObjetivos', [ObjetivoController::class, 'update']);
 
 //Routes Tablero
 //Create
