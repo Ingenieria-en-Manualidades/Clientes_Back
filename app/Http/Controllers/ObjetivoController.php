@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use DateTime;
 use Illuminate\Http\Request;
 use App\Models\Objetivo;
+use App\Models\Tablero_Sae;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -14,28 +16,55 @@ class ObjetivoController extends Controller
         try {
             // Validar los datos entrantes
             $validatedData = $request->validate([
+                'fecha' => 'required|string',
+                'cliente_id' => 'required|integer',
                 'planificada' => 'required|integer',
                 'modificada' => 'nullable|integer',
                 'plan_armado' => 'nullable|integer',
                 'calidad' => 'nullable|integer',
                 'desperfecto_me' => 'nullable|integer',
                 'desperfecto_pp' => 'nullable|integer',
-                'tablero_sae_id' => 'required|integer',
             ]);
+            $date = new DateTime($validatedData['fecha']);
+            $dia = $date->format('Y') .'-'. $date->format('m') .'-'. $date->format('d');
+            $formato = $date->format('Y') .'-'. $date->format('m');
 
-            // Guardar los datos en la base de datos
-            $objetivo = new Objetivo();
-            $objetivo->planificada = $validatedData['planificada'] ?? null;
-            $objetivo->modificada = $validatedData['modificada'] ?? null;
-            $objetivo->plan_armado = $validatedData['plan_armado'] ?? null;
-            $objetivo->calidad = $validatedData['calidad'] ?? null;
-            $objetivo->desperfecto_me = $validatedData['desperfecto_me'] ?? null;
-            $objetivo->desperfecto_pp = $validatedData['desperfecto_pp'] ?? null;
-            $objetivo->tablero_sae_id = $validatedData['tablero_sae_id'] ?? null;
-            $objetivo->save();
+            $tableroID = Tablero_Sae::select('tablero_sae.tablero_sae_id')
+            ->join('clientes', 'clientes.id', '=','tablero_sae.cliente_id')
+            ->where('tablero_sae.fecha','like', '%' . $formato . '%')
+            ->where('clientes.cliente_endpoint_id','=', $validatedData['cliente_id'])
+            ->get();
 
-            // Devolver una respuesta exitosa en caso de no fallar
-            return response()->json(['success' => true,'message' => 'Objetivo creado con éxito.', 'data' => $request], 200);
+            // $verificacionObjetivo = Objetivo::select('objetivos.objetivos_id')
+            // ->where('objetivos.created_at','like', $dia . '%')
+            // ->get();
+
+            Log::info("Resultado: ", ['mysql: ' => $tableroID]);
+            Log::info("Resultado: ", ['mysql primero: ' => $tableroID[0]->tablero_sae_id]);
+            // if (verificacionObjetivo->isEmpty()) {
+                if ($tableroID->isEmpty()) {
+                    return response()->json(['message' => 'No existe una meta para la producción.','errors' => $request], 404);
+                }else {
+                    // Guardar los datos en la base de datos
+                    $objetivo = new Objetivo();
+                    $objetivo->planificada = $validatedData['planificada'] ?? null;
+                    $objetivo->modificada = $validatedData['modificada'] ?? null;
+                    $objetivo->plan_armado = $validatedData['plan_armado'] ?? null;
+                    $objetivo->calidad = $validatedData['calidad'] ?? null;
+                    $objetivo->desperfecto_me = $validatedData['desperfecto_me'] ?? null;
+                    $objetivo->desperfecto_pp = $validatedData['desperfecto_pp'] ?? null;
+                    $objetivo->tablero_sae_id = $tableroID[0]->tablero_sae_id;
+                    $objetivo->save();
+    
+                    // Devolver una respuesta exitosa en caso de no fallar
+                    return response()->json(['success' => true,'message' => 'Objetivo creado con éxito.', 'data' => $request], 200);
+                }
+            // } else {
+            //     return response()->json([
+            //         'message' => 'Ya existe fecha.',
+            //         'errors' => $request
+            //     ], 422);
+            // }
         } catch (ValidationException $e) {
             // Si la validación falla, se capturan los errores y se devuelven
             return response()->json([
@@ -67,7 +96,7 @@ class ObjetivoController extends Controller
                 'desperfecto_me' => 'nullable|integer',
                 'desperfecto_pp' => 'nullable|integer',
             ]);
-            
+            Log::info("Fecha update: ", ['fecha: ' => $validatedData['fecha']]);
             // Consultar la producción por fecha para tener la de ID de la producción que queremos actualizar 
             $resultadoMySql = DB::table('objetivos')
             ->select('objetivos.objetivos_id')
