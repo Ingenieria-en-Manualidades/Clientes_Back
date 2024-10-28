@@ -12,6 +12,9 @@ use Illuminate\Validation\ValidationException;
 
 class ObjetivoController extends Controller
 {
+    /**
+     * Método para guardar objetivos, no permite guardar un objetivo con el mismo día de inserción
+     */
     public function create(Request $request){
         try {
             // Validar los datos entrantes
@@ -25,23 +28,31 @@ class ObjetivoController extends Controller
                 'desperfecto_me' => 'nullable|integer',
                 'desperfecto_pp' => 'nullable|integer',
             ]);
+
+            // El dato "fecha" ingresado lo convertimos a un objeto "Date".
             $date = new DateTime($validatedData['fecha']);
+
+            // Creamos un string en formato "yyyy-mm-dd" con el objeto "Date" creado anteriormente, para las consultas.
             $dia = $date->format('Y') .'-'. $date->format('m') .'-'. $date->format('d');
+
+            // Creamos un string en formato "yyyy-mm" con el objeto "Date" creado anteriormente, para las consultas.
             $formato = $date->format('Y') .'-'. $date->format('m');
 
+            // Consultamos a que tablero Sae va a relacionarse el objetivo, buscando por mes actual y por el cliente relacionado al usuario que ordeno la petición.
             $tableroID = Tablero_Sae::select('tablero_sae.tablero_sae_id')
             ->join('clientes', 'clientes.id', '=','tablero_sae.cliente_id')
             ->where('tablero_sae.fecha','like', '%' . $formato . '%')
             ->where('clientes.cliente_endpoint_id','=', $validatedData['cliente_id'])
             ->get();
 
-            // $verificacionObjetivo = Objetivo::select('objetivos.objetivos_id')
-            // ->where('objetivos.created_at','like', $dia . '%')
-            // ->get();
+            // Consultamos si ya existe un objetivo creado con la misma fecha de hoy, ya que no puede haber dos objetivos con la misma fecha.
+            $verificacionObjetivo = Objetivo::select('objetivos.objetivos_id')
+            ->where('objetivos.created_at','like', $dia . '%')
+            ->get();
 
-            Log::info("Resultado: ", ['mysql: ' => $tableroID]);
-            Log::info("Resultado: ", ['mysql primero: ' => $tableroID[0]->tablero_sae_id]);
-            // if (verificacionObjetivo->isEmpty()) {
+            // Verificamos si la consulta retorno un objetivo con la misma fecha ingresada, en caso de no haber ninguna continua con el guardado.
+            if ($verificacionObjetivo->isEmpty()) {
+                // Verificamos si la consulta retorno una ID del tablero Sae para relacionarlo, en caso de no haber ninguna retornamos el mensaje de error.
                 if ($tableroID->isEmpty()) {
                     return response()->json(['message' => 'No existe una meta para la producción.','errors' => $request], 404);
                 }else {
@@ -59,12 +70,13 @@ class ObjetivoController extends Controller
                     // Devolver una respuesta exitosa en caso de no fallar
                     return response()->json(['success' => true,'message' => 'Objetivo creado con éxito.', 'data' => $request], 200);
                 }
-            // } else {
-            //     return response()->json([
-            //         'message' => 'Ya existe fecha.',
-            //         'errors' => $request
-            //     ], 422);
-            // }
+            } else {
+                // Si existe un objetivo con la misma fecha retornamos este error.
+                return response()->json([
+                    'message' => 'Ya existe una producción para el día de hoy.',
+                    'errors' => $request
+                ], 422);
+            }
         } catch (ValidationException $e) {
             // Si la validación falla, se capturan los errores y se devuelven
             return response()->json([
@@ -106,7 +118,7 @@ class ObjetivoController extends Controller
             ->where('clientes.cliente_endpoint_id', '=', $validatedData['cliente_id'])
             ->get();
 
-            //Revisamos si la consultar trajo un resultado
+            //Revisamos si al consultar trajo un resultado
             if ($resultadoMySql->isEmpty()) {
                 return response()->json(['message' => 'No existe una producción con esa fecha.','errors' => $request], 404);
             }else {
