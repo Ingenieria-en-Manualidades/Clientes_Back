@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('calidad', function (Blueprint $table) {
             $table->id('calidad_id');
-            $table->integer('checklist');
-            $table->integer('inspeccion');
+            $table->integer('checklist')->nullable();
+            $table->integer('inspeccion')->nullable();
             $table->unsignedBigInteger('meta_id');
             $table->softDeletes();
             $table->timestamps();
