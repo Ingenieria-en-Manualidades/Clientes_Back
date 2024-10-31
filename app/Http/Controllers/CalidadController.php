@@ -20,7 +20,7 @@ class CalidadController extends Controller
                 'checklist' => 'nullable|integer',
                 'inspeccion' => 'nullable|integer',
             ]);
-            
+
             // El dato "fecha" ingresado lo convertimos a un objeto "Date".
             $date = new DateTime($validatedData['fecha']);
 
@@ -44,7 +44,12 @@ class CalidadController extends Controller
                 ->get();
                 Log::info("Consulta mySQL: ", ['Calidad: ' => $calidad]);
                 if ($calidad->isEmpty()) {
-                    Log::alert("GUARDANDO...");
+                    // Guardar los datos en la base de datos
+                    $newCalidad = new Calidad();
+                    $newCalidad->checklist =  $validatedData['checklist'] ?? null;
+                    $newCalidad->inspeccion = $validatedData['inspeccion'] ?? null;
+                    $newCalidad->meta_id = $metaID[0]->meta_id;
+                    $newCalidad->save();
                 } else {
                     if ($calidad[0]->checklist === null || $calidad[0]->inspeccion === null) {
                         if ($calidad[0]->checklist === null) {
@@ -52,20 +57,12 @@ class CalidadController extends Controller
                         } else {
                             Log::alert("INSPECCION IS NULL...");
                         }
-                        
                     } else {
-                        Log::alert("NO ENTRO...");
+                        Log::alert("TU LO QUE QUIERES ES ACTUALIZAR TODO...");
                     }
                     Log::alert("ACTUALIZANDO...");
                 }
             }
-            
-            // Guardar los datos en la base de datos
-            // $calidad = new Calidad();
-            // $calidad->checklist = $validatedData['checklist'];
-            // $calidad->inspeccion = $validatedData['inspeccion'];
-            // $calidad->meta_id = $validatedData['meta_id'];
-            // $calidad->save();
 
             // Devolver una respuesta exitosa en caso de no fallar
             return response()->json(['success' => true,'message' => 'Calidad creado con éxito', 'data' => $request], 200);
