@@ -11,6 +11,10 @@ use Illuminate\Validation\ValidationException;
 
 class CalidadController extends Controller
 {
+    /**
+     * Método de guardado de calidad en la cual buscamos la meta_id a la cual pertenece la calida y 
+     * verificamos que no haya valores ya ingresados en la inserción para no tener que guardar.
+     */
     public function create(Request $request){
         try {
             // Validar los datos entrantes
@@ -34,33 +38,55 @@ class CalidadController extends Controller
             ->where('clientes.cliente_endpoint_id','=', $validatedData['cliente_endpoint_id'])
             ->get();
 
-            Log::info("Consulta: ", ['metaID: ' => $metaID[0]->meta_id]);
             // Verificamos que haya una acción en caso de encontrar o no una meta id.
             if ($metaID->isEmpty()) {
                 return response()->json(['message' => 'No existe una meta con esa fecha.','errors' => $request], 404);
             } else {
-                $calidad = Calidad::select('calidad.*')
+                // Guardamos los datos entrantes en variables para que en caso de no estar estas serán "null".
+                $checklist = $validatedData['checklist'] ?? null;
+                $inspeccion = $validatedData['inspeccion'] ?? null;
+
+                // Buscamos una inserción de calidad que tenga la meta id encontrada.
+                $calidadConsulta = Calidad::select('calidad.*')
                 ->where('calidad.meta_id', '=', $metaID[0]->meta_id)
                 ->get();
-                Log::info("Consulta mySQL: ", ['Calidad: ' => $calidad]);
-                if ($calidad->isEmpty()) {
+                
+                // En caso de no haber una calidad sin esa meta_id creamos esa calidad.
+                if ($calidadConsulta->isEmpty()) {
                     // Guardar los datos en la base de datos
-                    $newCalidad = new Calidad();
-                    $newCalidad->checklist =  $validatedData['checklist'] ?? null;
-                    $newCalidad->inspeccion = $validatedData['inspeccion'] ?? null;
-                    $newCalidad->meta_id = $metaID[0]->meta_id;
-                    $newCalidad->save();
+                    $calidad = new Calidad();
+                    $calidad->checklist =  $checklist;
+                    $calidad->inspeccion = $inspeccion;
+                    $calidad->meta_id = $metaID[0]->meta_id;
+                    $calidad->save();
                 } else {
-                    if ($calidad[0]->checklist === null || $calidad[0]->inspeccion === null) {
-                        if ($calidad[0]->checklist === null) {
-                            Log::alert("CHECKLIST IS NULL...");
+                    // En caso de haber una calidad con esa meta_id significa que quiere ingresar el "checklist" o la "inspección" que le falta a la calidad
+
+                    // Creamos un objeto "Calidad" para actualizar la inserción.
+                    $calidadUpdate = Calidad::findOrFail($calidadConsulta[0]->calidad_id);
+
+                    // Verificamos que dato quiere ingresar el usuario utilizando las variables que podrian ser null en caso de no estar ingresadas.
+                    if ($checklist) {
+
+                        // Verificamos que la inserción no tenga valor para poder realizar el guardado.
+                        if ($calidadConsulta[0]->checklist === null) {
+                            $calidadUpdate->checklist = $checklist;
+                            $calidadUpdate->save();
                         } else {
-                            Log::alert("INSPECCION IS NULL...");
+                            // En caso de haber ya haber un valor enviamos un mensaje avisandolo.
+                            return response()->json(['message' => 'Ya existe un valor checklist guardada en esta meta.','errors' => $request], 409);
                         }
-                    } else {
-                        Log::alert("TU LO QUE QUIERES ES ACTUALIZAR TODO...");
+                    }else {
+
+                        // Verificamos que la inserción no tenga valor para poder realizar el guardado.
+                        if ($calidadConsulta[0]->inspeccion === null) {
+                            $calidadUpdate->inspeccion = $inspeccion;
+                            $calidadUpdate->save();
+                        } else {
+                            // En caso de haber ya haber un valor enviamos un mensaje avisandolo.
+                            return response()->json(['message' => 'Ya existe un valor de inspección guardada en esta meta.','errors' => $request], 409);
+                        }
                     }
-                    Log::alert("ACTUALIZANDO...");
                 }
             }
 
