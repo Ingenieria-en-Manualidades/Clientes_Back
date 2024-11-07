@@ -47,7 +47,7 @@ class ObjetivoController extends Controller
 
             // Consultamos si ya existe un objetivo creado con la misma fecha de hoy, ya que no puede haber dos objetivos con la misma fecha.
             $verificacionObjetivo = Objetivo::select('objetivos.objetivos_id')
-            ->where('objetivos.created_at','like', $dia . '%')
+            ->where('objetivos.fecha','like', $dia . '%')
             ->get();
 
             // Verificamos si la consulta retorno un objetivo con la misma fecha ingresada, en caso de no haber ninguna continua con el guardado.
@@ -58,6 +58,7 @@ class ObjetivoController extends Controller
                 }else {
                     // Guardar los datos en la base de datos
                     $objetivo = new Objetivo();
+                    $objetivo->fecha = $validatedData['fecha'] ?? null;
                     $objetivo->planificada = $validatedData['planificada'] ?? null;
                     $objetivo->modificada = $validatedData['modificada'] ?? null;
                     $objetivo->plan_armado = $validatedData['plan_armado'] ?? null;
@@ -114,7 +115,7 @@ class ObjetivoController extends Controller
             ->select('objetivos.objetivos_id')
             ->join('tablero_sae', 'tablero_sae.tablero_sae_id', '=', 'objetivos.tablero_sae_id')
             ->join('clientes', 'clientes.id', '=', 'tablero_sae.cliente_id')
-            ->where('objetivos.created_at', 'like', $validatedData['fecha'] . '%')
+            ->where('objetivos.fecha', 'like', $validatedData['fecha'] . '%')
             ->where('clientes.cliente_endpoint_id', '=', $validatedData['cliente_id'])
             ->get();
 

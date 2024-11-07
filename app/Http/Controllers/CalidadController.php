@@ -7,6 +7,7 @@ use App\Models\Calidad;
 use App\Models\Tablero_Sae;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class CalidadController extends Controller

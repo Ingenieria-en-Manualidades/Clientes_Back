@@ -39,7 +39,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => 'http://127.0.0.1:8000/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
@@ -53,6 +53,14 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => false,
+        ],
+
+        'evidencias' => [
+            'driver' => 'local',
+            'root' => storage_path('app/evidencias'),
+            'url' => 'storage/evidencias',
+            'visibility' => 'public',
             'throw' => false,
         ],
 

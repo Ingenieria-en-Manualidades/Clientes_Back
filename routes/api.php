@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MetaController;
+use App\Http\Controllers\FileController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\Admon\UserController;
 use App\Http\Controllers\CalidadController;
@@ -58,3 +59,7 @@ Route::post('/guardarTablero', [Tablero_SaeController::class, 'create']);
 //Routes Usuario y permiso
 //Create
 Route::post('/relacionarUsuarioPermiso', [PermissionController::class, 'guardarUserPermission']);
+
+//Routes Archivos
+Route::get('/createFile', [CalidadController::class, 'createFile']);
+Route::post('/guardarArchivo', [FileController::class, 'saveFileCalidad']);

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('objetivos', function (Blueprint $table) {
             $table->id('objetivos_id');
+            $table->timestamp('fecha');
             $table->integer('planificada');
             $table->integer('modificada')->nullable();
             $table->integer('plan_armado')->nullable();
