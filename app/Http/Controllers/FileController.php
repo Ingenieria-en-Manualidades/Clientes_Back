@@ -36,7 +36,13 @@ class FileController extends Controller
                     Storage::disk('evidencias')->makeDirectory($directorio);
                 }
                 
-                $path = $request->file('archivo')->storeAs($directorio, 'archivoEjemplo.pdf', 'evidencias');
+                $nombreArchivo = $fecha->format('Y-m-d') . "_" . $request->file('archivo')->getClientOriginalName();
+
+                $path = $request->file('archivo')->storeAs($directorio, $nombreArchivo, 'evidencias');
+                // Log::info("Log: ", ['path: ' => "evidencias/" . $path]);
+                // Log::info("nombre original del archivo: ", ['nombre: ' => $request->file('archivo')->getClientOriginalName()]);
+                // Log::info("nombre extensión del archivo: ", ['nombre: ' => $request->file('archivo')->getClientOriginalExtension()]);
+                // Log::info("nombre completo archivo: ", ['nombre: ' => $fecha->format('Y-m-d') . "_" . $request->file('archivo')->getClientOriginalName()]);
             }
             
             return response()->json([
