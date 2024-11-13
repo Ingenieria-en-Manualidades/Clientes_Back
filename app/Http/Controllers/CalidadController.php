@@ -33,14 +33,14 @@ class CalidadController extends Controller
             $mesMeta = $date->format('Y') .'-'. $date->format('m');
 
             // Consultamos a que tablero Sae va a relacionarse el objetivo, buscando por mes actual y por el cliente relacionado al usuario que ordeno la petición.
-            $metaID = Tablero_Sae::select('tablero_sae.meta_id')
+            $consTableroSae = Tablero_Sae::select('tablero_sae.*')
             ->join('clientes', 'clientes.id', '=','tablero_sae.cliente_id')
             ->where('tablero_sae.fecha','like', $mesMeta . '%')
             ->where('clientes.cliente_endpoint_id','=', $validatedData['cliente_endpoint_id'])
             ->get();
 
             // Verificamos que haya una acción en caso de encontrar o no una meta id.
-            if ($metaID->isEmpty()) {
+            if ($consTableroSae->isEmpty()) {
                 return response()->json(['message' => 'No existe una meta con esa fecha.','errors' => $request], 404);
             } else {
                 // Guardamos los datos entrantes en variables para que en caso de no estar estas serán "null".
@@ -49,7 +49,7 @@ class CalidadController extends Controller
 
                 // Buscamos una inserción de calidad que tenga la meta id encontrada.
                 $calidadConsulta = Calidad::select('calidad.*')
-                ->where('calidad.meta_id', '=', $metaID[0]->meta_id)
+                ->where('calidad.meta_id', '=', $consTableroSae[0]->meta_id)
                 ->get();
                 
                 // En caso de no haber una calidad sin esa meta_id creamos esa calidad.
@@ -58,7 +58,7 @@ class CalidadController extends Controller
                     $calidad = new Calidad();
                     $calidad->checklist =  $checklist;
                     $calidad->inspeccion = $inspeccion;
-                    $calidad->meta_id = $metaID[0]->meta_id;
+                    $calidad->meta_id = $consTableroSae[0]->meta_id;
                     $calidad->save();
                 } else {
                     // En caso de haber una calidad con esa meta_id significa que quiere ingresar el "checklist" o la "inspección" que le falta a la calidad
@@ -92,7 +92,7 @@ class CalidadController extends Controller
             }
 
             // Devolver una respuesta exitosa en caso de no fallar
-            return response()->json(['success' => true,'message' => 'Calidad creado con éxito', 'data' => $request], 200);
+            return response()->json(['success' => true, 'tablero_sae_id' => $consTableroSae[0]->tablero_sae_id], 200);
         } catch (ValidationException $e) {
             // Si la validación falla, se capturan los errores y se devuelven
             return response()->json([

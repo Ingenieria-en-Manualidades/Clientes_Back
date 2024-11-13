@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use DateTime;
+use App\Models\File;
 use App\Models\Cliente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +16,8 @@ class FileController extends Controller
             $validatedData = $request->validate([
                 'archivo' => 'required|file|mimes:pdf',
                 'cliente_endpoint_id' => 'required|integer',
+                'tipo_formulario' => 'required|string',
+                'tablero_sae_id' => 'required|integer',
             ]);
 
             $nombreCliente = Cliente::select('clientes.nombre')->where('clientes.cliente_endpoint_id', '=', $validatedData['cliente_endpoint_id'])
@@ -36,29 +39,32 @@ class FileController extends Controller
                     Storage::disk('evidencias')->makeDirectory($directorio);
                 }
                 
-                $nombreArchivo = $fecha->format('Y-m-d') . "_" . $request->file('archivo')->getClientOriginalName();
+                $nombreArchivo = $nombreArchivo = $fecha->format('Y-m-d') . "_" . $validatedData['tipo_formulario'] . "_" . $request->file('archivo')->getClientOriginalName();
 
                 $path = $request->file('archivo')->storeAs($directorio, $nombreArchivo, 'evidencias');
-                // Log::info("Log: ", ['path: ' => "evidencias/" . $path]);
-                // Log::info("nombre original del archivo: ", ['nombre: ' => $request->file('archivo')->getClientOriginalName()]);
-                // Log::info("nombre extensión del archivo: ", ['nombre: ' => $request->file('archivo')->getClientOriginalExtension()]);
-                // Log::info("nombre completo archivo: ", ['nombre: ' => $fecha->format('Y-m-d') . "_" . $request->file('archivo')->getClientOriginalName()]);
+                
+                $file = new File();
+                $file->ruta = "storage/evidencias/" . $path;
+                $file->tipo = $request->file('archivo')->getClientOriginalExtension();
+                $file->tablero_sae_id = $validatedData['tablero_sae_id'];
+                $file->save();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Calidad creada con éxito',
+                    'data' => $request,
+                ], 200);
             }
-            
-            return response()->json([
-                'message' => 'URL TOMALO O DEJALO',
-                'path' => "no jodas"
-            ], 200);
         } catch (ValidationException $e) {
             // Si la validación falla, se capturan los errores y se devuelven
             return response()->json([
-                'message' => 'Error en la validación de los datos de calidad',
+                'message' => 'Error en la validación de los datos de file',
                 'errors' => $request
             ], 422);
         } catch (\Exception $e) {
             // Si ocurre cualquier otro error, devolver un error general
             return response()->json([
-                'message' => 'Ha ocurrido un error al guardar los objetivos',
+                'message' => 'Ha ocurrido un error al guardar el archivo',
                 'error' => $e->getMessage()
             ], 500);
         }
