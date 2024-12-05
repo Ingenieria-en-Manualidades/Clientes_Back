@@ -28,7 +28,7 @@ class FileController extends Controller
             } else {
                 $fecha = new DateTime();
                 $directorioCliente = str_replace(' ','-', $nombreCliente[0]->nombre);
-            
+
                 if (!Storage::disk('evidencias')->exists('Calidad/' . $directorioCliente)) {
                     Storage::disk('evidencias')->makeDirectory('Calidad/' . $directorioCliente);
                 }
@@ -39,7 +39,13 @@ class FileController extends Controller
                     Storage::disk('evidencias')->makeDirectory($directorio);
                 }
                 
-                $nombreArchivo = $nombreArchivo = $fecha->format('Y-m-d') . "_" . $validatedData['tipo_formulario'] . "_" . $request->file('archivo')->getClientOriginalName();
+                $directorio = $directorio . '/' . $validatedData['tipo_formulario'];
+
+                if (!Storage::disk('evidencias')->exists($directorio)) {
+                    Storage::disk('evidencias')->makeDirectory($directorio);
+                }
+
+                $nombreArchivo = $nombreArchivo = $fecha->format('Y-m-d') . "_" . $request->file('archivo')->getClientOriginalName();
 
                 $path = $request->file('archivo')->storeAs($directorio, $nombreArchivo, 'evidencias');
                 
