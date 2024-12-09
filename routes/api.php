@@ -63,3 +63,4 @@ Route::post('/relacionarUsuarioPermiso', [PermissionController::class, 'guardarU
 //Routes Archivos
 Route::get('/createFile', [CalidadController::class, 'createFile']);
 Route::post('/guardarArchivo', [FileController::class, 'saveFileCalidad']);
+Route::post('/listarArchivos', [FileController::class, 'store']);
