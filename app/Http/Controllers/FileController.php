@@ -141,4 +141,28 @@ class FileController extends Controller
             ], 500);
         }
     }
+
+    public function downloadFile(Request $request) {
+        try {
+            // Validar los datos entrantes
+            $validatedData = $request->validate([
+                'url' => 'required|string',
+            ]);
+
+            if (Storage::disk('evidencias')->exists($validatedData['url'])) {
+                return Storage::disk('evidencias')->download($validatedData['url']);
+            } else {
+                return response()->json([
+                    'message' => 'Archivo no encontrado.',
+                    'errors' => $request
+                ], 422);
+            }
+        } catch (\Exception $e) {
+            // Si ocurre cualquier otro error, devolver un error general
+            return response()->json([
+                'message' => 'Ha ocurrido un error al descargar el archivo',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

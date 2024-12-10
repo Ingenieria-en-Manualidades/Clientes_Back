@@ -64,3 +64,4 @@ Route::post('/relacionarUsuarioPermiso', [PermissionController::class, 'guardarU
 Route::get('/createFile', [CalidadController::class, 'createFile']);
 Route::post('/guardarArchivo', [FileController::class, 'saveFileCalidad']);
 Route::post('/listarArchivos', [FileController::class, 'store']);
+Route::post('/descargar-pdf', [FileController::class, 'downloadFile']);
