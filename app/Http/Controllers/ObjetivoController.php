@@ -109,7 +109,7 @@ class ObjetivoController extends Controller
                 'desperfecto_me' => 'nullable|integer',
                 'desperfecto_pp' => 'nullable|integer',
             ]);
-            Log::info("Fecha update: ", ['fecha: ' => $validatedData['fecha']]);
+            // Log::info("Fecha update: ", ['fecha: ' => $validatedData['fecha']]);
             // Consultar la producción por fecha para tener la de ID de la producción que queremos actualizar 
             $resultadoMySql = DB::table('objetivos')
             ->select('objetivos.objetivos_id')

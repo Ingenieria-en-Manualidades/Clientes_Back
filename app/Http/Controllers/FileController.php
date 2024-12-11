@@ -18,49 +18,68 @@ class FileController extends Controller
                 'cliente_endpoint' => 'required|integer',
             ]);
 
-            $consTableroSae = Tablero_Sae::select('tablero_sae.tablero_sae_id', 'tablero_sae.fecha')
-            ->join('clientes', 'clientes.id', '=','tablero_sae.cliente_id')
+            $verificacionCliente = Cliente::select('clientes.*')
             ->where('clientes.cliente_endpoint_id','=', $validatedData['cliente_endpoint'])
             ->get();
 
             $archivos = [];
-            foreach ($consTableroSae as $tablero) {
-                $rutas = File::select('files.ruta')
-                ->where('files.tablero_sae_id', '=', $tablero->tablero_sae_id)
-                ->get();
-
-                foreach ($rutas as $ruta) {
-                    $rutaActual = $ruta->ruta;
-
-                    if (Storage::disk('evidencias')->exists($rutaActual)) {
-                        $nombre = basename('evidencias/' . $rutaActual);
-
-                        $date = new DateTime($tablero->fecha);
-                        $fechaMeta = $date->format('Y') .'-'. $date->format('m');
-
-                        $buscarCalidad = strpos($rutaActual, 'checklist');
-                        $tipoCalidad = "";
-                        if ($buscarCalidad !== false) {
-                            $tipoCalidad = "Checklist";
-                        } else {
-                            $tipoCalidad = "Inspección sol";
+            if ($verificacionCliente->isEmpty()) {
+                return response()->json([
+                    'message' => 'Cliente inexistente en el sistema.',
+                    'errors' => $request
+                ], 404);
+            } else {
+                $consTableroSae = Tablero_Sae::select('tablero_sae.tablero_sae_id', 'tablero_sae.fecha')
+                ->join('clientes', 'clientes.id', '=','tablero_sae.cliente_id')
+                ->where('clientes.cliente_endpoint_id','=', $validatedData['cliente_endpoint'])
+                ->orderBy('tablero_sae.fecha', 'DESC')->get();
+                
+                if ($consTableroSae->isEmpty()) {
+                    return response()->json([
+                        'message' => 'Ninguna meta registrada.',
+                        'errors' => $request
+                    ], 405);
+                } else {
+                    foreach ($consTableroSae as $tablero) {
+                        $rutas = File::select('files.ruta')
+                        ->where('files.tablero_sae_id', '=', $tablero->tablero_sae_id)
+                        ->get();
+    
+                        if (!$rutas->isEmpty()) {
+                            foreach ($rutas as $ruta) {
+                                $rutaActual = $ruta->ruta;
+        
+                                if (Storage::disk('evidencias')->exists($rutaActual)) {
+                                    $nombre = basename('evidencias/' . $rutaActual);
+        
+                                    $date = new DateTime($tablero->fecha);
+                                    $fechaMeta = $date->format('Y') .'-'. $date->format('m');
+        
+                                    $buscarCalidad = strpos($rutaActual, 'checklist');
+                                    $tipoCalidad = "";
+                                    if ($buscarCalidad !== false) {
+                                        $tipoCalidad = "Checklist";
+                                    } else {
+                                        $tipoCalidad = "Inspección sol";
+                                    }
+                                    
+                                    $archivos[] = [
+                                        "nombre" => $nombre,
+                                        "tipo_calidad" => $tipoCalidad,
+                                        "meta" => $fechaMeta,
+                                        "url" => $rutaActual,
+                                    ];
+                                }
+                            }
                         }
-                        
-                        $archivos[] = [
-                            "nombre" => $nombre,
-                            "tipo_calidad" => $tipoCalidad,
-                            "meta" => $fechaMeta,
-                            "url" => $rutaActual,
-                        ];
                     }
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Carga exitosa de archivos.',
+                        'archivos' => $archivos,
+                    ], 200);
                 }
             }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Carga exitosa de archivos.',
-                'archivos' => $archivos,
-            ], 200);
         } catch (ValidationException $e) {
             // Si la validación falla, se capturan los errores y se devuelven
             return response()->json([
@@ -70,7 +89,7 @@ class FileController extends Controller
         } catch (\Exception $e) {
             // Si ocurre cualquier otro error, devolver un error general
             return response()->json([
-                'message' => 'Ha ocurrido un error al guardar el archivo',
+                'message' => 'Ha ocurrido un error al cargar.',
                 'error' => $e->getMessage()
             ], 500);
         }
