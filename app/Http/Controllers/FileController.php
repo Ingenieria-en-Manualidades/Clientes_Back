@@ -23,6 +23,7 @@ class FileController extends Controller
             ->get();
 
             $archivos = [];
+            $archivosInexistentes = [];
             if ($verificacionCliente->isEmpty()) {
                 return response()->json([
                     'message' => 'Cliente inexistente en el sistema.',
@@ -48,26 +49,32 @@ class FileController extends Controller
                         if (!$rutas->isEmpty()) {
                             foreach ($rutas as $ruta) {
                                 $rutaActual = $ruta->ruta;
-        
+                                $nombre = basename('evidencias/' . $rutaActual);
+
+                                $date = new DateTime($tablero->fecha);
+                                $fechaMeta = $date->format('Y') .'-'. $date->format('m');
+
+                                $buscarCalidad = strpos($rutaActual, 'checklist');
+                                $tipoCalidad = "";
+                                if ($buscarCalidad !== false) {
+                                    $tipoCalidad = "Checklist";
+                                } else {
+                                    $tipoCalidad = "Inspección sol";
+                                }
+
                                 if (Storage::disk('evidencias')->exists($rutaActual)) {
-                                    $nombre = basename('evidencias/' . $rutaActual);
-        
-                                    $date = new DateTime($tablero->fecha);
-                                    $fechaMeta = $date->format('Y') .'-'. $date->format('m');
-        
-                                    $buscarCalidad = strpos($rutaActual, 'checklist');
-                                    $tipoCalidad = "";
-                                    if ($buscarCalidad !== false) {
-                                        $tipoCalidad = "Checklist";
-                                    } else {
-                                        $tipoCalidad = "Inspección sol";
-                                    }
-                                    
                                     $archivos[] = [
                                         "nombre" => $nombre,
                                         "tipo_calidad" => $tipoCalidad,
                                         "meta" => $fechaMeta,
                                         "url" => $rutaActual,
+                                    ];
+                                } else {
+                                    $archivosInexistentes[] = [
+                                        "nombre" => $nombre,
+                                        "tipo_calidad" => $tipoCalidad,
+                                        "meta" => $fechaMeta,
+                                        "url" => null,
                                     ];
                                 }
                             }
@@ -77,6 +84,7 @@ class FileController extends Controller
                         'success' => true,
                         'message' => 'Carga exitosa de archivos.',
                         'archivos' => $archivos,
+                        'archivosInexistentes' => $archivosInexistentes,
                     ], 200);
                 }
             }
