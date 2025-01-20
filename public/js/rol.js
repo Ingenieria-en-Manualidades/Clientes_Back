@@ -19,14 +19,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 return allPermissions.map(permission => {
                     const checked = selectedPermissions.includes(permission) ? 'checked' : '';
                     return `
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="permissions[]" value="${escapeHtml(permission)}" id="permission-${escapeHtml(permission)}" ${checked}>
-                    <label class="form-check-label" for="permission-${escapeHtml(permission)}">
-                        ${escapeHtml(permission)}
-                    </label>
-                </div>`;
+                        <div class="form-check flex items-center space-x-2 px-10 py-2">
+                            <input class="form-check-input" type="checkbox" name="permissions[]" 
+                                value="${escapeHtml(permission)}" id="permission-${escapeHtml(permission)}" ${checked}>
+                            <label class="form-check-label" for="permission-${escapeHtml(permission)}">
+                                ${escapeHtml(permission)}
+                            </label>
+                        </div>`;
                 }).join('');
             };
+
+            // Configura el comportamiento del dropdown (mostrar/ocultar)
+            const setupDropdownToggle = () => {
+                const toggleButton = document.getElementById('dropdownToggle');
+                const dropdownContent = document.getElementById('permissionsDropdown');
+            
+                toggleButton.addEventListener('click', () => {
+                    dropdownContent.classList.toggle('hidden');
+                });
+            
+                // Ocultar el dropdown al hacer clic fuera de él
+                document.addEventListener('click', (event) => {
+                    if (!toggleButton.contains(event.target) && !dropdownContent.contains(event.target)) {
+                        dropdownContent.classList.add('hidden');
+                    }
+                });
+            };
+
+            // Configura la funcionalidad de búsqueda dinámica en el dropdown   
+            const setupPermissionsSearch = () => {
+                const searchInput = document.getElementById('permissionsSearch');
+                const permissionsList = document.getElementById('permissionsList');
+            
+                searchInput.addEventListener('input', () => {
+                    const searchTerm = searchInput.value.toLowerCase();
+                    const checkboxes = permissionsList.querySelectorAll('.form-check');
+            
+                    checkboxes.forEach(checkbox => {
+                        const label = checkbox.querySelector('label').textContent.toLowerCase();
+                        if (label.includes(searchTerm)) {
+                            checkbox.style.display = 'flex'; // Muestra si coincide
+                        } else {
+                            checkbox.style.display = 'none'; // Muestra si no coincide
+                        }
+                    });
+                });
+            };
+
+
 
             // Maneja el clic en el botón de editar
             const handleEditButtonClick = (event) => {
@@ -44,14 +84,34 @@ document.addEventListener('DOMContentLoaded', () => {
                         <label for="name" class="block text-gray-700 text-sm font-bold mb-2">Nombre del Rol</label>
                         <input type="text" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" id="name" name="name" value="${escapeHtml(name)}" required>
                     </div>
-                    <div class="form-group mb-4">
+                    <div class="form-group mb-4 relative">
                         <label for="permissions" class="block text-gray-700 text-sm font-bold mb-2">Permisos</label>
-                        <div id="permissions">
-                            ${generatePermissionsCheckboxes(permissions)}
+                        <button type="button" id="dropdownToggle" 
+                            class="w-full px-4 py-2 text-left bg-white border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            Seleccionar Permisos
+                        </button>
+                        <div id="permissionsDropdown" 
+                            class="absolute hidden bg-white border rounded-md shadow-lg w-full z-50">
+                            <!-- Campo de búsqueda -->
+                            <div class="p-2 border-b">
+                                <input type="text" id="permissionsSearch" 
+                                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Buscar permisos...">
+                            </div>
+                            <!-- Lista de permisos -->
+                            <div id="permissionsList" class="max-h-48 overflow-y-auto">
+                                ${generatePermissionsCheckboxes(permissions)}
+                            </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary bg-blue hover:bg-cyan-200 text-white font-bold py-2 px-4 rounded-md">Guardar Cambios</button>
+                    <button type="submit" 
+                        class="btn btn-primary bg-blue hover:bg-cyan-200 text-white font-bold py-2 px-4 rounded-md">
+                        Guardar Cambios
+                    </button>
                 </form>`;
+                // Configura los eventos para el dropdown y la búsqueda
+                setupDropdownToggle();
+                setupPermissionsSearch();
             };
             // Añade event listeners a los botones de edición
             document.querySelectorAll('.edit-button').forEach(button => {
@@ -68,19 +128,39 @@ document.addEventListener('DOMContentLoaded', () => {
                         <label for="name" class="block text-gray-700 text-sm font-bold mb-2">Nombre del Rol</label>
                         <input type="text" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" id="name" name="name" required>
                     </div>
-                    <div class="form-group mb-4">
+                    <div class="form-group mb-4 relative">
                         <label for="permissions" class="block text-gray-700 text-sm font-bold mb-2">Permisos</label>
-                        <div id="permissions">
-                            ${generatePermissionsCheckboxes()}
+                        <button type="button" id="dropdownToggle" 
+                            class="w-full px-4 py-2 text-left bg-white border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            Seleccionar Permisos
+                        </button>
+                        <div id="permissionsDropdown" 
+                            class="absolute hidden bg-white border rounded-md shadow-lg w-full z-50">
+                            <!-- Campo de búsqueda -->
+                            <div class="p-2 border-b">
+                                <input type="text" id="permissionsSearch" 
+                                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Buscar permisos...">
+                            </div>
+                            <!-- Lista de permisos -->
+                            <div id="permissionsList" class="max-h-48 overflow-y-auto">
+                                ${generatePermissionsCheckboxes()}
+                            </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary bg-blue hover:bg-cyan-200 text-white font-bold py-2 px-4 rounded-md">Crear Rol</button>
+                    <button type="submit" 
+                        class="btn btn-primary bg-blue hover:bg-cyan-200 text-white font-bold py-2 px-4 rounded-md">
+                        Crear Rol
+                    </button>
                 </form>`;
+                // Configura los eventos para el dropdown y la búsqueda
+                setupDropdownToggle();
+                setupPermissionsSearch();
             };
             // Añade event listener al botón de crear
             document.getElementById('create-button').addEventListener('click', handleCreateButtonClick);
 
-            
+
 
 
             // Función para ocultar automáticamente los mensajes de éxito y error
@@ -148,7 +228,7 @@ const fetchDeletedRoles = async () => {
         }
         const data = await response.json();
         updateRoleTable(data, 'No se encontraron datos eliminados.');
-        updateTrashButton('<-- Volver Atras', 'btn-warning', 'btn-primary', fetchActiveRoles);
+        updateTrashButton('⭠ Presiona para regresar', 'btn-warning', 'btn-primary', fetchActiveRoles);
 
     } catch (error) {
         console.error('Error fetching deleted roles:', error);

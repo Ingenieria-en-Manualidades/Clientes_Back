@@ -24,7 +24,7 @@ class User extends Authenticatable
     use Notifiable;
     use TwoFactorAuthenticatable;
     use HasRoles;
-    use SoftDeletes; 
+    use SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -90,5 +90,10 @@ class User extends Authenticatable
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(Permission::class, 'user_permission', 'user_id', 'permission_id');
+    }
+
+    public function Role($role)
+    {
+        return $this->hasRole($role); // Ejemplo con spatie/laravel-permission
     }
 }

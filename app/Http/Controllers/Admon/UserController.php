@@ -197,7 +197,7 @@ class UserController extends Controller
      */
     public function getRolesAndClientes()
     {
-        $roles = Role::all();
+        $roles = Role::with('permissions')->whereNull('deleted_at')->get();
         $clientes = Cliente::all();
 
         return response()->json([

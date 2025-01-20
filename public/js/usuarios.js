@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="form-group mb-4">
                         <label for="rol" class="block text-gray-700 text-sm font-bold mb-2">Rol</label>
                         <select name="rol" id="rol" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="">Seleccionar Cliente</option>
+                            <option value="">Seleccionar Rol</option>
                             ${rolesOptions}
                         </select>
                     </div>
