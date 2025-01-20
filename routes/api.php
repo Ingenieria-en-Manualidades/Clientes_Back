@@ -14,54 +14,43 @@ use App\Http\Controllers\Tablero_SaeController;
 use App\Http\Controllers\IndicadoresController;
 use App\Http\Controllers\PermissionController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-Route::get('/roles', [RolePermissionController::class, 'getRoles']);
-
+// Authentication Routes
 Route::post('login', [AuthController::class, 'login']);
-Route::get('roles-clientes', [UserController::class, 'getRolesAndClientes']);
 Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
 Route::post('/generartoken', [AuthController::class, 'generateToken']);
 Route::get('/verificarToken/{token}', [AuthController::class, 'setVerificarToken']);
 Route::post('/verificarTokenLogin', [AuthController::class, 'setVerificarLogin'])->middleware('auth:sanctum');
+Route::get('borrarToken/{token}', [AuthController::class, 'deleteToken']);
+
+// User Routes
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-Route::get('borrarToken/{token}', [AuthController::class, 'deleteToken']);
+Route::get('/roles', [RolePermissionController::class, 'getRoles']);
+Route::get('roles-clientes', [UserController::class, 'getRolesAndClientes']);
 Route::post('/updatePassword', [UserController::class, 'updatePassword']);
 
-//Routes Create Meta
+// Meta Routes
 Route::post('/guardarMeta', [MetaController::class, 'create']);
 
-//Routes Calidad
-//Create
+// Calidad Routes
 Route::post('/guardarCalidad', [CalidadController::class, 'create']);
 
-//Routes Accidente
-//Create
+// Accidentes Routes
 Route::post('/guardarAccidente', [AccidentesController::class, 'create']);
 
-//Routes Objetivos
-//Create
+// Objetivos Routes
 Route::post('/guardarObjetivos', [ObjetivoController::class, 'create']);
-//Update
 Route::post('/actualizarObjetivos', [ObjetivoController::class, 'update']);
 
-//Routes Tablero
-//Create
+// Tablero Routes
 Route::post('/guardarTablero', [Tablero_SaeController::class, 'create']);
 
-//Routes Usuario y permiso
-//Create
+// Permission Routes
 Route::post('/relacionarUsuarioPermiso', [PermissionController::class, 'guardarUserPermission']);
 
-//Routes Archivos
-Route::get('/createFile', [CalidadController::class, 'createFile']);
+// File Routes
+// Route::get('/createFile', [CalidadController::class, 'createFile']);
 Route::post('/guardarArchivo', [FileController::class, 'saveFileCalidad']);
 Route::post('/listarArchivos', [FileController::class, 'store']);
 Route::post('/descargar-pdf', [FileController::class, 'downloadFile']);
