@@ -35,6 +35,7 @@ Route::post('/guardarMeta', [MetaController::class, 'create']);
 
 // Calidad Routes
 Route::post('/guardarCalidad', [CalidadController::class, 'create']);
+Route::post('/verificarCalidad', [CalidadController::class, 'verificarValores']);
 
 // Accidentes Routes
 Route::post('/guardarAccidente', [AccidentesController::class, 'create']);
@@ -54,3 +55,4 @@ Route::post('/relacionarUsuarioPermiso', [PermissionController::class, 'guardarU
 Route::post('/guardarArchivo', [FileController::class, 'saveFileCalidad']);
 Route::post('/listarArchivos', [FileController::class, 'store']);
 Route::post('/descargar-pdf', [FileController::class, 'downloadFile']);
+Route::post('/deleteFile', [FileController::class, 'delete']);

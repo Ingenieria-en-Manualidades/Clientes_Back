@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use DateTime;
+use App\Models\File;
 use App\Models\Calidad;
 use App\Models\Tablero_Sae;
 use Illuminate\Http\Request;
@@ -78,7 +79,6 @@ class CalidadController extends Controller
                             return response()->json(['message' => 'Ya existe un valor checklist guardada en esta meta.','errors' => $request], 409);
                         }
                     }else {
-
                         // Verificamos que la inserción no tenga valor para poder realizar el guardado.
                         if ($calidadConsulta[0]->inspeccion === null) {
                             $calidadUpdate->inspeccion = $inspeccion;
@@ -103,6 +103,102 @@ class CalidadController extends Controller
             // Si ocurre cualquier otro error, devolver un error general
             return response()->json([
                 'message' => 'Ha ocurrido un error al guardar los objetivos',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function verificarValores(Request $request){
+        try {
+            // Validar los datos entrantes
+            $validatedData = $request->validate([
+                'fecha' => 'required|string',
+                'cliente_endpoint_id' => 'required|integer',
+                'tipo_formulario' => 'nullable|string',
+            ]);
+
+            // El dato "fecha" ingresado lo convertimos a un objeto "Date".
+            $date = new DateTime($validatedData['fecha']);
+
+            // Creamos un string en formato "yyyy-mm" con el objeto "Date" creado anteriormente, para las consultas.
+            $mesMeta = $date->format('Y') .'-'. $date->format('m');
+
+            // Consultamos a que tablero Sae va a relacionarse el objetivo, buscando por mes actual y por el cliente relacionado al usuario que ordeno la petición.
+            $consTableroSae = Tablero_Sae::select('tablero_sae.*')
+            ->join('clientes', 'clientes.id', '=','tablero_sae.cliente_id')
+            ->where('tablero_sae.fecha','like', $mesMeta . '%')
+            ->where('clientes.cliente_endpoint_id','=', $validatedData['cliente_endpoint_id'])
+            ->get();
+
+            // Verificamos que haya una acción en caso de encontrar o no una meta id.
+            if ($consTableroSae->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No existe una meta con esa fecha.','errors' => $request], 404);
+            } else {
+
+                // Buscamos una inserción de calidad que tenga la meta id encontrada.
+                $calidadConsulta = Calidad::select('calidad.*')
+                ->where('calidad.meta_id', '=', $consTableroSae[0]->meta_id)
+                ->get();
+                
+                // En caso de no haber una calidad sin esa meta_id creamos esa calidad.
+                if ($calidadConsulta->isEmpty()) {
+                    return response()->json(['success' => false, 'message' => 'Sin necesidad de actualizar.'], 200);
+                } else {
+                    // Verificamos que dato quiere ingresar el usuario utilizando las variables que podrian ser null en caso de no estar ingresadas.
+                    if ($validatedData['tipo_formulario'] === 'checklist') {
+                        // Verificamos que la inserción no tenga valor para poder realizar el guardado.
+                        if ($calidadConsulta[0]->checklist === null) {
+                            return response()->json(['success' => false, 'message' => 'Sin necesidad de actualizar.'], 200);
+                        } else {
+                            $valorChecklist = $calidadConsulta[0]->checklist;
+                            $valorFile = null;
+                            $routeFiles = File::select('files.ruta')
+                            ->where('files.tablero_sae_id', '=', $consTableroSae[0]->tablero_sae_id)
+                            ->get();
+                            
+                            if (!$routeFiles->isEmpty()) {
+                                // foreach ($routeFiles as $route) {
+                                //     $valueString = strpos($route, 'checklist');
+                                //     if ($valueString) {
+                                //         if (Storage::disk('evidencias')->exists($route)) {
+                                //             Log::info("ESTOY AQUI ADENTRO");
+                                //         }
+                                //     }
+                                // }
+                                // Storage::disk('evidencias')->exists($routeFiles);
+                            }
+                            Log::info("RUTAS: ", ['rutas' => $routeFiles]);
+                            Log::info("VALORES: ", ['valorFile' => $valorFile]);
+                            
+                            // Storage::disk('evidencias')->files();
+                            // En caso de haber ya haber un valor enviamos un mensaje avisandolo.
+                            return response()->json([
+                                'success' => true,
+                                'calificacion' => $valorChecklist,
+                                'message' => 'Ya existe un valor checklist guardada en esta meta.'
+                            ], 200);
+                        }
+                    }else {
+                        // Verificamos que la inserción no tenga valor para poder realizar el guardado.
+                        if ($calidadConsulta[0]->inspeccion === null) {
+                            return response()->json(['success' => false, 'message' => 'Sin necesidad de actualizar.'], 200);
+                        } else {
+                            // En caso de haber ya haber un valor enviamos un mensaje avisandolo.
+                            return response()->json(['success' => true, 'message' => 'Ya existe un valor de inspección guardada en esta meta.'], 200);
+                        }
+                    }
+                }
+            }
+        } catch (ValidationException $e) {
+            // Si la validación falla, se capturan los errores y se devuelven
+            return response()->json([
+                'message' => 'Error en la validación de los datos para verificar calidad.',
+                'errors' => $request
+            ], 422);
+        } catch (\Exception $e) {
+            // Si ocurre cualquier otro error, devolver un error general
+            return response()->json([
+                'message' => 'Ha ocurrido un error al verificar los objetivos',
                 'error' => $e->getMessage()
             ], 500);
         }
