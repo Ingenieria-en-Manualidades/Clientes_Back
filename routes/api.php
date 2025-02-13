@@ -18,6 +18,7 @@ use App\Http\Controllers\PermissionController;
 Route::post('login', [AuthController::class, 'login']);
 Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 Route::post('/generartoken', [AuthController::class, 'generateToken']);
+Route::post('/enviarEmailContraseña', [AuthController::class, 'sendRecoveryEmail']);
 Route::get('/verificarToken/{token}', [AuthController::class, 'setVerificarToken']);
 Route::post('/verificarTokenLogin', [AuthController::class, 'setVerificarLogin'])->middleware('auth:sanctum');
 Route::get('borrarToken/{token}', [AuthController::class, 'deleteToken']);
