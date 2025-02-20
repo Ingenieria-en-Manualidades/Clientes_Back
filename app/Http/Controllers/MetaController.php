@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use DateTime;
 use App\Models\Meta;
 use App\Models\Cliente;
 use App\Models\Tablero_Sae;
@@ -26,8 +27,11 @@ class MetaController extends Controller
                 'desperdicioPP' => 'required|integer',
                 'cliente_endpoint_id' => 'required|integer',
             ]);
-            
-            $tableroSae = Tablero_Sae::where('fecha', 'like', $validatedData['fecha'] . '%')->get();
+
+            // Creamos variable para poder consultar la fecha en la BD con este formato 'yyyy-mm'
+            $date = new DateTime($validatedData['fecha']);
+
+            $tableroSae = Tablero_Sae::where('fecha', 'like', $date->format('Y') . '-' . $date->format('m') . '%')->get();
 
             if ($tableroSae->isEmpty()) {
                 $clienteID = Cliente::select('clientes.id')
