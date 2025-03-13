@@ -87,6 +87,8 @@ try {
     ->join('permissions', 'permissions.id', '=', 'user_permission.permission_id')
     ->select('permissions.name')
     ->where('users.id', $user->id)
+    ->whereNull('permissions.deleted_at')
+    ->whereNull('user_permission.deleted_at')
     ->get();
 
     Log::info("PERMISOS: ", ['permisos' => $permissions]);

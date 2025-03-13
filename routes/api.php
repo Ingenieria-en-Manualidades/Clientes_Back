@@ -13,6 +13,8 @@ use App\Http\Controllers\ObjetivoController;
 use App\Http\Controllers\Tablero_SaeController;
 use App\Http\Controllers\IndicadoresController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\MetaUnidadesController;
+use App\Http\Controllers\UnidadesDiariasController;
 
 // Authentication Routes
 Route::post('login', [AuthController::class, 'login']);
@@ -57,3 +59,7 @@ Route::post('/guardarArchivo', [FileController::class, 'saveFileCalidad']);
 Route::post('/listarArchivos', [FileController::class, 'store']);
 Route::post('/descargar-pdf', [FileController::class, 'downloadFile']);
 Route::post('/deleteFile', [FileController::class, 'delete']);
+
+// Production Routes
+Route::post('/createMetaUnidades', [MetaUnidadesController::class, 'create']);
+Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);

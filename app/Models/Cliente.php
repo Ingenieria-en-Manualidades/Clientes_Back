@@ -25,4 +25,9 @@ class Cliente extends Model
     {
         return $this->hasMany(Tablero_Sae::class, 'id', 'id');
     }
+
+    public function meta_unidades()
+    {
+        return $this->hasMany(MetaUnidades::class, 'clientes_id', 'id');
+    }
 }
