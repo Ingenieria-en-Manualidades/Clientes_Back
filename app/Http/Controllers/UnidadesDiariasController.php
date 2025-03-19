@@ -23,7 +23,7 @@ class UnidadesDiariasController extends Controller
             $dateExisting = UnidadesDiarias::where('fecha_programacion', $validateData['fecha_programacion'])->first();
 
             if ($dateExisting) {
-                return response()->json(['message' => 'Ya hay unidades programadas para el día ingresado.'], 409);
+                return response()->json(['title' => 'Unidades existentes.', 'message' => 'Ya hay unidades programadas para el día ingresado.'], 409);
             } else {
                 $date = new DateTime($validateData['fecha_programacion']);
                 $metaUnidadesID = MetaUnidades::where('fecha_meta','like',$date->format('Y') .'-'. $date->format('m') .'%')->first();
@@ -35,15 +35,15 @@ class UnidadesDiariasController extends Controller
                     $unidades->meta_unidades_id = $metaUnidadesID->meta_unidades_id;
                     $unidades->usuario = $validateData['usuario'];
                     $unidades->save();
-                    return response()->json(['message' => 'Unidades programadas guardadas con exito.'], 200);
+                    return response()->json(['title' => 'Guardado con exito.', 'message' => 'Unidades programadas guardadas con exito.'], 200);
                 } else {
-                    return response()->json(['message' => 'No existe una meta de unidades para el día ingresado.'], 404);
+                    return response()->json(['title' => 'Meta inexistente.','message' => 'No existe una meta de unidades para el día ingresado.'], 404);
                 }
             }
         } catch (validationException $e) {
-            return response()->json(['message' => 'Error en la validación de la unidades programadas diarias.', 'error' => $e->getMessage()], 422);
+            return response()->json(['title' => 'Error de validación.', 'message' => 'Error en la validación de la unidades programadas diarias.', 'error' => $e->getMessage()], 422);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Ha ocurrido un error al guardar las unidades diarias.', 'error' => $e->getMessage()], 500);
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un error al guardar las unidades diarias.', 'error' => $e->getMessage()], 500);
         }
     }
 }

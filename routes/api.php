@@ -61,5 +61,6 @@ Route::post('/descargar-pdf', [FileController::class, 'downloadFile']);
 Route::post('/deleteFile', [FileController::class, 'delete']);
 
 // Production Routes
+Route::get('/metaUnidadesExists/{date}', [MetaUnidadesController::class, 'exists']);
 Route::post('/createMetaUnidades', [MetaUnidadesController::class, 'create']);
 Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);
