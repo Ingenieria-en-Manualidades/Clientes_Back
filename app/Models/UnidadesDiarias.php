@@ -10,7 +10,7 @@ class UnidadesDiarias extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'unidades_diarias';
+    protected $table = 'CLIENTS.unidades_diarias';
     protected $primaryKey = 'unidades_diarias_id';
 
     protected $fillable = [

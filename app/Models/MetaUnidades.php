@@ -10,7 +10,7 @@ class MetaUnidades extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'meta_unidades';
+    protected $table = 'CLIENTS.meta_unidades';
     protected $primaryKey = 'meta_unidades_id';
 
     protected $fillable = [

@@ -11,7 +11,7 @@ class Cliente extends Model
 {
     use HasFactory, SoftDeletes; 
 
-    protected $table = 'clientes';
+    protected $table = 'CLIENTS.clientes';
     protected $primaryKey = 'id';
 
     protected $fillable = ['nombre', 'cliente_endpoint_id', 'activo'];

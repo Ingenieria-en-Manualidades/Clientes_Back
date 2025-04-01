@@ -10,7 +10,7 @@ class Calidad extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'calidad';
+    protected $table = 'CLIENTS.calidad';
     protected $primaryKey = 'calidad_id';
 
     protected $fillable = [
