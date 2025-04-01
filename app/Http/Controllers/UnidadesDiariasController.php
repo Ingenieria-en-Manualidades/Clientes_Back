@@ -87,7 +87,6 @@ class UnidadesDiariasController extends Controller
             } else {
                 return response()->json(['title' => 'No hay unidades programadas.'], 404);
             }
-            
         } catch (\Exception $e) {
             return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un error al guardar las unidades diarias.', 'error' => $e->getMessage()], 500);
         }

@@ -91,7 +91,7 @@ try {
     ->whereNull('user_permission.deleted_at')
     ->get();
 
-    Log::info("PERMISOS: ", ['permisos' => $permissions]);
+    // Log::info("PERMISOS: ", ['permisos' => $permissions]);
 
     if ($user->activo === 'n') {
         Auth::logout();
