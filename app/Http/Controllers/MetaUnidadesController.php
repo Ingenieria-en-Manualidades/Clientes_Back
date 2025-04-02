@@ -54,6 +54,28 @@ class MetaUnidadesController extends Controller
         }
     }
 
+    public function list($client_endpoint_id) {
+        try {
+            $client = Cliente::where('cliente_endpoint_id', $client_endpoint_id)->first();
+
+            if ($client) {
+                $data = MetaUnidades::select(
+                    'meta_unidades_id',
+                    'valor',
+                    'fecha_meta',
+                    'updated_at',
+                    'usuario',
+                )->where('clientes_id', $client->id)
+                ->get();
+                return response()->json(['title' => 'Guardado con exito.', 'message' => 'Unidades programadas guardadas con exito.', 'data' => $data], 200);
+            } else {
+                return response()->json(['title' => 'Error al guardar.', 'message' => 'Cliente no encontrado en la BD.'], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo con el servidor.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function exists (Request $request)
     {
         try {

@@ -65,3 +65,4 @@ Route::post('/metaUnidadesExists', [MetaUnidadesController::class, 'exists']);
 Route::post('/createMetaUnidades', [MetaUnidadesController::class, 'create']);
 Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);
 Route::post('/getUnidadesDiarias', [UnidadesDiariasController::class, 'getUnidadesDiarias']);
+Route::get('getListUnidadesMeta/{client_endpoint_id}', [MetaUnidadesController::class, 'list']);

@@ -10,6 +10,8 @@ class Role extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    protected $table = 'CLIENTS.roles';
+    protected $primaryKey = 'id';
     
     protected $fillable = ['name', 'guard_name'];
 
