@@ -50,6 +50,7 @@ class CalidadController extends Controller
                 // Buscamos una inserción de calidad que tenga la meta id encontrada.
                 $calidadConsulta = Calidad::select('calidad.*')
                 ->where('calidad.meta_id', '=', $consTableroSae[0]->meta_id)
+                ->whereNull('deleted_at')
                 ->get();
                 
                 // En caso de no haber una calidad sin esa meta_id creamos esa calidad.
@@ -75,7 +76,7 @@ class CalidadController extends Controller
                             $calidadUpdate->save();
                         } else {
                             // En caso de haber ya haber un valor enviamos un mensaje avisandolo.
-                            return response()->json(['message' => 'Ya existe un valor checklist guardada en esta meta.','errors' => $request], 409);
+                            return response()->json(['message' => 'Ya existe un valor checklist guardada en esta meta.','errors' => $request], status: 409);
                         }
                     }else {
 
