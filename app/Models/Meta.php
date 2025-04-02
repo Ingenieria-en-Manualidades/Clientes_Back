@@ -10,7 +10,7 @@ class Meta extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'meta';
+    protected $table = 'CLIENTS.meta';
     protected $primaryKey = 'meta_id';
 
     protected $fillable = [

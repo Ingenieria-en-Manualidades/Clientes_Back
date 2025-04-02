@@ -12,7 +12,6 @@ class Tablero_SaeController extends Controller
 {
     public function create(Request $request){
         try {
-            // Validar los datos entrantes
             $validatedData = $request->validate([
                 'fecha' => 'required|string',
                 'meta_id' => 'required|integer',

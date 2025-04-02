@@ -42,7 +42,7 @@ class FileController extends Controller
                     ], 405);
                 } else {
                     foreach ($consTableroSae as $tablero) {
-                        $rutas = File::select('files.ruta')
+                        $rutas = File::select('files.ruta', 'files.files_id')
                         ->where('files.tablero_sae_id', '=', $tablero->tablero_sae_id)
                         ->get();
     
@@ -66,8 +66,10 @@ class FileController extends Controller
                                     $archivos[] = [
                                         "nombre" => $nombre,
                                         "tipo_calidad" => $tipoCalidad,
+                                        "tablero_sae_id" => $tablero->tablero_sae_id,
                                         "meta" => $fechaMeta,
                                         "url" => $rutaActual,
+                                        "id" => $ruta->files_id,
                                     ];
                                 } else {
                                     $archivosInexistentes[] = [
@@ -111,6 +113,7 @@ class FileController extends Controller
                 'cliente_endpoint_id' => 'required|integer',
                 'tipo_formulario' => 'required|string',
                 'tablero_sae_id' => 'required|integer',
+                'year_file' => 'required|string',
             ]);
 
             $nombreCliente = Cliente::select('clientes.nombre')->where('clientes.cliente_endpoint_id', '=', $validatedData['cliente_endpoint_id'])
@@ -126,7 +129,7 @@ class FileController extends Controller
                     Storage::disk('evidencias')->makeDirectory('Calidad/' . $directorioCliente);
                 }
 
-                $directorio = 'Calidad/' . $directorioCliente . '/' . $fecha->format('Y');
+                $directorio = 'Calidad/' . $directorioCliente . '/' . $validatedData['year_file'];
 
                 if (!Storage::disk('evidencias')->exists($directorio)) {
                     Storage::disk('evidencias')->makeDirectory($directorio);
@@ -184,6 +187,42 @@ class FileController extends Controller
                     'errors' => $request
                 ], 422);
             }
+        } catch (\Exception $e) {
+            // Si ocurre cualquier otro error, devolver un error general
+            return response()->json([
+                'message' => 'Ha ocurrido un error al descargar el archivo',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function delete(Request $request) {
+        try {
+            // Validar los datos entrantes
+            $validatedData = $request->validate([
+                'url' => 'required|string',
+                'id' => 'required|integer'
+            ]);
+
+            $file = File::withTrashed()->find($validatedData['id']);
+
+            if ($file) {
+                $file->delete();
+            } else {
+                return response()->json(['success' => false, 'message' => 'No se encontro el archivo en la BD.'], 404);
+            }
+
+            if (Storage::disk('evidencias')->exists($validatedData['url'])) {
+                Storage::disk('evidencias')->delete($validatedData['url']);
+            }
+            
+            return response()->json(['success' => true, 'message' => 'Eliminación del archivo completa.'], 200);
+        } catch (ValidationException $e) {
+            // Si la validación falla, se capturan los errores y se devuelven
+            return response()->json([
+                'message' => 'Error en la validación de los datos de file',
+                'errors' => $request
+            ], 422);
         } catch (\Exception $e) {
             // Si ocurre cualquier otro error, devolver un error general
             return response()->json([

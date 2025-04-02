@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('username');
             $table->string('email');
             $table->string('token');
+            $table->softDeletes();
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
         });

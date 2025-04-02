@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\TokensPassword;
+use App\Mail\RecoverPasswordEmail;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Exception;
@@ -85,9 +87,11 @@ try {
     ->join('permissions', 'permissions.id', '=', 'user_permission.permission_id')
     ->select('permissions.name')
     ->where('users.id', $user->id)
+    ->whereNull('permissions.deleted_at')
+    ->whereNull('user_permission.deleted_at')
     ->get();
 
-    Log::info("PERMISOS: ", ['permisos' => $permissions]);
+    // Log::info("PERMISOS: ", ['permisos' => $permissions]);
 
     if ($user->activo === 'n') {
         Auth::logout();
@@ -202,16 +206,16 @@ try {
             $tokenResultado = TokensPassword::where('token', $token)->first();
 
             if (!$tokenResultado) {
-                return response()->json(['success' => false, 'message' => 'Token no encontrado.', 'codigo' => 404], 404);
+                return response()->json(['success' => false, 'title' => 'Token no encontrado.', 'message' => 'El link con el cual entro es incorrecto.'], 404);
             }else {
                 if (Carbon::now()->greaterThan($tokenResultado->expires_at)) {
-                    return response()->json(['success' => false, 'message' => 'Token expirado.', 'codigo' => 403], 403);
+                    return response()->json(['success' => false, 'title' => 'Token expirado.', 'message' => 'Por favor repita el proceso de recuperar contraseña.'], 403);
                 }else {
                     return response()->json(['success' => true, 'message' => 'Token verificado.', 'id_username' => $tokenResultado->id_username], 200);
                 }
             }
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Server error.', 'error' => $e->getMessage(), 'codigo' => 500], 500);
+            return response()->json(['success' => false, 'title' => 'Error del servidor.', 'message' => 'Error del servidor a la hora de verificar el token.'], 500);
         }
     }
 
@@ -247,10 +251,42 @@ try {
         try {
             TokensPassword::where('token', $token)->delete();
 
-            return response()->json(['success' => true, 'message' => 'Token expirado.']);
+            return response()->json(['success' => true, 'message' => 'Token exitosamente borrado.']);
         } catch (\Throwable $th) {
-            Log::error("Error a la hora de borrar el token.");
             return response()->json(['success' => false, 'message' => 'Error a la hora de borrar el token.']);
+        }
+    }
+
+    public function sendRecoveryEmail(Request $request)
+    {
+        try {
+            // Validar los datos entrantes
+            $validatedData = $request->validate([
+                'email' => 'required|email',
+                'token' => 'required|string',
+            ]);
+
+            $email = $validatedData['email'];
+            $token = $validatedData['token'];
+            $link = env('FRONTEND_URL') . "/actualizarPassword-{$token}";
+
+            Mail::to($email)->send(new RecoverPasswordEmail($link,$email));
+
+            return response()->json(['success' => true, 'message' => 'Por favor revise su correo para continuar con el proceso.'], 200);
+        } catch (ValidationException $e) {
+            // Si la validación falla, se capturan los errores y se devuelven
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en la validación de los datos del correo.',
+                'errors' => $request
+            ], 422);
+        } catch (\Exception $e) {
+            // Si ocurre cualquier otro error, devolver un error general
+            return response()->json([
+                'success' => false,
+                'message' => 'Ha ocurrido un error al cargar.',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 

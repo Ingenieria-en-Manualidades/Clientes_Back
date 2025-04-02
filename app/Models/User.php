@@ -26,6 +26,9 @@ class User extends Authenticatable
     use HasRoles;
     use SoftDeletes;
 
+    protected $table = 'CLIENTS.users';
+    protected $primaryKey = 'id';
+
     /**
      * The attributes that are mass assignable.
      *

@@ -13,11 +13,14 @@ use App\Http\Controllers\ObjetivoController;
 use App\Http\Controllers\Tablero_SaeController;
 use App\Http\Controllers\IndicadoresController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\MetaUnidadesController;
+use App\Http\Controllers\UnidadesDiariasController;
 
 // Authentication Routes
 Route::post('login', [AuthController::class, 'login']);
 Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 Route::post('/generartoken', [AuthController::class, 'generateToken']);
+Route::post('/enviarEmailContraseña', [AuthController::class, 'sendRecoveryEmail']);
 Route::get('/verificarToken/{token}', [AuthController::class, 'setVerificarToken']);
 Route::post('/verificarTokenLogin', [AuthController::class, 'setVerificarLogin'])->middleware('auth:sanctum');
 Route::get('borrarToken/{token}', [AuthController::class, 'deleteToken']);
@@ -35,6 +38,7 @@ Route::post('/guardarMeta', [MetaController::class, 'create']);
 
 // Calidad Routes
 Route::post('/guardarCalidad', [CalidadController::class, 'create']);
+Route::post('/verificarCalidad', [CalidadController::class, 'verificarValores']);
 
 // Accidentes Routes
 Route::post('/guardarAccidente', [AccidentesController::class, 'create']);
@@ -54,3 +58,10 @@ Route::post('/relacionarUsuarioPermiso', [PermissionController::class, 'guardarU
 Route::post('/guardarArchivo', [FileController::class, 'saveFileCalidad']);
 Route::post('/listarArchivos', [FileController::class, 'store']);
 Route::post('/descargar-pdf', [FileController::class, 'downloadFile']);
+Route::post('/deleteFile', [FileController::class, 'delete']);
+
+// Production Routes
+Route::post('/metaUnidadesExists', [MetaUnidadesController::class, 'exists']);
+Route::post('/createMetaUnidades', [MetaUnidadesController::class, 'create']);
+Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);
+Route::post('/getUnidadesDiarias', [UnidadesDiariasController::class, 'getUnidadesDiarias']);

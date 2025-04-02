@@ -10,7 +10,7 @@ class Objetivo extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'objetivos';
+    protected $table = 'CLIENTS.objetivos';
     protected $primaryKey = 'objetivos_id';
 
     protected $fillable = [
