@@ -60,9 +60,16 @@ Route::post('/listarArchivos', [FileController::class, 'store']);
 Route::post('/descargar-pdf', [FileController::class, 'downloadFile']);
 Route::post('/deleteFile', [FileController::class, 'delete']);
 
-// Production Routes
+// Unidades Mensuales Routes
 Route::post('/metaUnidadesExists', [MetaUnidadesController::class, 'exists']);
 Route::post('/createMetaUnidades', [MetaUnidadesController::class, 'create']);
-Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);
-Route::post('/getUnidadesDiarias', [UnidadesDiariasController::class, 'getUnidadesDiarias']);
+Route::post('/updateMetaUnidades', [MetaUnidadesController::class, 'update']);
 Route::get('getListUnidadesMeta/{client_endpoint_id}', [MetaUnidadesController::class, 'list']);
+Route::get('getMetaUnidades/{meta_unidades_id}', [MetaUnidadesController::class, 'getMetaUnidades']);
+
+// Unidades Diarias Routes
+Route::post('/getUnidadesDiarias', [UnidadesDiariasController::class, 'getUnidadesDiarias']); //API GROOT
+Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);
+Route::post('/updateUnidadesDiarias', [UnidadesDiariasController::class, 'update']);
+Route::get('/getListUnidadesDiarias/{meta_unidades_id}', [UnidadesDiariasController::class, 'list']);
+Route::get('/getUnidadesDiariaID/{unidades_diaria_id}', [UnidadesDiariasController::class, 'getUnidadesDiariaID']);

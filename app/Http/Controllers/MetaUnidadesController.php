@@ -66,11 +66,60 @@ class MetaUnidadesController extends Controller
                     'updated_at',
                     'usuario',
                 )->where('clientes_id', $client->id)
+                ->orderBy('fecha_meta', 'desc')
                 ->get();
-                return response()->json(['title' => 'Guardado con exito.', 'message' => 'Unidades programadas guardadas con exito.', 'data' => $data], 200);
+                return response()->json(['data' => $data], 200);
             } else {
                 return response()->json(['title' => 'Error al guardar.', 'message' => 'Cliente no encontrado en la BD.'], 404);
             }
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo con el servidor.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getMetaUnidades($meta_unidades_id) {
+        try {
+            $metaUnidades = MetaUnidades::select('fecha_meta','valor')
+            ->where('meta_unidades_id', $meta_unidades_id)
+            ->first();
+
+            if ($metaUnidades) {
+                return response()->json(['meta_unidades' => $metaUnidades], 200);
+            } else {
+                return response()->json(['title' => 'Error en la meta.', 'message' => 'Meta no encontrada en la BD.'], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo con el servidor.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function update(Request $request) {
+        try {
+            $validatedData = $request->validate([
+                'valor' => 'required|integer',
+                'usuario' => 'required|string',
+                'meta_unidades_id' => 'required|string',
+            ]);
+
+            $metaUnidades = MetaUnidades::where('meta_unidades_id', $validatedData['meta_unidades_id'])->first();
+
+            if ($metaUnidades) {
+                $updated = MetaUnidades::where('meta_unidades_id', $validatedData['meta_unidades_id'])->update([
+                    'valor' => $validatedData['valor'],
+                    'usuario' => $validatedData['usuario'],
+                ]);
+
+                if ($updated) {
+                    return response()->json(['title' => 'Actualización exitosa.', 'message' => 'Meta de unidades actualizada correctamente.'], 200);
+                } else {
+                    return response()->json(['title' => 'Actualización fallida.', 'message' => 'No se pudo actualizar la meta de unidades'], 400);
+                }
+            } else {
+                return response()->json(['title' => 'Error en la meta.', 'message' => 'Meta no encontrada en la BD.'], 404);
+            }
+
+        } catch (ValidationException $e) {
+            return response()->json(['title' => 'Error de validación.', 'message' => 'Error en las unidades mensuales ingresadas.', 'error' => $e->getMessage()], 422);
         } catch (\Exception $e) {
             return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo con el servidor.', 'error' => $e->getMessage()], 500);
         }

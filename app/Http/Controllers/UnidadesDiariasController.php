@@ -62,6 +62,76 @@ class UnidadesDiariasController extends Controller
         }
     }
 
+    public function list($meta_unidades_id) {
+        try {
+            $metaUnidades = MetaUnidades::where('meta_unidades_id', $meta_unidades_id)->first();
+
+            if ($metaUnidades) {
+                $data = UnidadesDiarias::select(
+                    'unidades_diarias_id',
+                    'fecha_programacion',
+                    'valor',
+                    'updated_at',
+                    'usuario'
+                )->where('meta_unidades_id', $metaUnidades->meta_unidades_id)
+                ->orderBy('fecha_programacion', 'desc')
+                ->get();
+                return response()->json(['data' => $data], 200);
+            } else {
+                return response()->json(['title' => 'Meta inexistente.','message' => 'No existe la meta de unidades ingresadas.'], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo con el servidor.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function update(Request $request) {
+        try {
+            $validatedData = $request->validate([
+                'valor' => 'required|integer',
+                'usuario' => 'required|string',
+                'unidades_diarias_id' => 'required|string',
+            ]);
+
+            $unidadesDiarias = UnidadesDiarias::where('unidades_diarias_id', $validatedData['unidades_diarias_id'])->first();
+
+            if ($unidadesDiarias) {
+                $updated = UnidadesDiarias::where('unidades_diarias_id', $validatedData['unidades_diarias_id'])->update([
+                    'valor' => $validatedData['valor'],
+                    'usuario' => $validatedData['usuario'],
+                ]);
+
+                if ($updated) {
+                    return response()->json(['title' => 'Actualización exitosa.', 'message' => 'Unidades diarias actualizada correctamente.'], 200);
+                } else {
+                    return response()->json(['title' => 'Actualización fallida.', 'message' => 'No se pudo actualizar las unidades diarias.'], 400);
+                }
+            } else {
+                return response()->json(['title' => 'Error en la meta.', 'message' => 'Unidades diarias no encontradas en la BD.'], 404);
+            }
+        } catch (ValidationException $e) {
+            return response()->json(['title' => 'Error de validación.', 'message' => 'Error en las unidades diarias ingresadas.', 'error' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo con el servidor.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getUnidadesDiariaID($unidades_diaria_id) {
+        try {
+            $unidadesDiaria = UnidadesDiarias::select('fecha_programacion','valor')
+            ->where('unidades_diarias_id', $unidades_diaria_id)
+            ->first();
+
+            if ($unidadesDiaria) {
+                return response()->json(['meta_unidades' => $unidadesDiaria], 200);
+            } else {
+                return response()->json(['title' => 'Error en la unidades diaria.', 'message' => 'Unidades diaria no encontrada en la BD.'], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo con el servidor.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function getUnidadesDiarias(Request $request) {
         try {
             $validateData = $request->validate([
