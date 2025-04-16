@@ -8,6 +8,7 @@ use App\Models\MetaUnidades;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 
 class MetaUnidadesController extends Controller
@@ -34,7 +35,7 @@ class MetaUnidadesController extends Controller
                 ->first();
                 
                 if ($metaExist) {
-                    return response()->json(['title' => 'Unidades existentes.', 'message' => 'Ya hay unidades programadas para el mes ingresado.', 'data' => $metaExist], 409);
+                    return response()->json(['title' => 'Unidades existentes.', 'message' => 'Existen unidades programadas para el mes ingresado.', 'data' => $metaExist], 409);
                 } else {
                     $objMetaUnidades = new MetaUnidades();
                     $objMetaUnidades->valor = $validatedData['valor'];
@@ -122,6 +123,17 @@ class MetaUnidadesController extends Controller
             return response()->json(['title' => 'Error de validación.', 'message' => 'Error en las unidades mensuales ingresadas.', 'error' => $e->getMessage()], 422);
         } catch (\Exception $e) {
             return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo con el servidor.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getAreasImec($clienteID) {
+        $response = Http::withoutVerifying()->get("https://imecplusdev.ienm.com.co:8443/api/area/listarCliente/{$clienteID}");
+
+        if ($response->successful()) {
+            $post = $response->json();
+            return response()->json(['data' => $post], 200);
+        } else {
+            return response()->json(['error' => 'No se pudo :-('], 400);
         }
     }
 

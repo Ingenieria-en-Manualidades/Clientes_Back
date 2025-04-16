@@ -20,6 +20,7 @@ class MetaUnidades extends Model
         'clientes_id',
         'usuario',
         'activo',
+        'area_id_groot',
     ];
 
     public function clientes()

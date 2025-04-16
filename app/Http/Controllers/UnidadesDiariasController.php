@@ -39,7 +39,7 @@ class UnidadesDiariasController extends Controller
                     ->first();
 
                     if ($dateExisting) {
-                        return response()->json(['title' => 'Unidades existentes.', 'message' => 'Ya hay unidades programadas para el día ingresado.'], 409);
+                        return response()->json(['title' => 'Unidades existentes.', 'message' => 'Existen unidades programadas para el día ingresado.'], 409);
                     } else {
                         $unidades = new UnidadesDiarias();
                         $unidades->valor = $validatedData['valor'];
