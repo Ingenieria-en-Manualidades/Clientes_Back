@@ -20,6 +20,7 @@ class MetaUnidadesController extends Controller
                 'valor' => 'required|integer',
                 'fecha_meta' => 'required|date',
                 'cliente_endpoint_id' => 'required|integer',
+                'area_id' => 'required|integer',
                 'usuario' => 'required|string',
             ]);
 
@@ -31,17 +32,19 @@ class MetaUnidadesController extends Controller
                 ->join('clientes as c', 'mu.clientes_id', '=', 'c.id')
                 ->where('mu.fecha_meta', 'like', $dateMeta->format('Y') .'-'. $dateMeta->format('m') .'%')
                 ->where('c.cliente_endpoint_id', '=', $validatedData['cliente_endpoint_id'])
+                ->where('mu.area_id_groot', '=', $validatedData['area_id'])
                 ->whereNull('mu.deleted_at')
                 ->first();
                 
                 if ($metaExist) {
-                    return response()->json(['title' => 'Unidades existentes.', 'message' => 'Existen unidades programadas para el mes ingresado.', 'data' => $metaExist], 409);
+                    return response()->json(['title' => 'Unidades existentes.', 'message' => 'Existen unidades programadas para el mes y area ingresados.', 'data' => $metaExist], 409);
                 } else {
                     $objMetaUnidades = new MetaUnidades();
                     $objMetaUnidades->valor = $validatedData['valor'];
                     $objMetaUnidades->fecha_meta = $validatedData['fecha_meta'];
                     $objMetaUnidades->clientes_id = $clienteID->id;
                     $objMetaUnidades->usuario = $validatedData['usuario'];
+                    $objMetaUnidades->area_id_groot = $validatedData['area_id'];
                     $objMetaUnidades->save();
                     return response()->json(['title' => 'Guardado con exito.', 'message' => 'Unidades programadas guardadas con exito.'], 200);
                 }
@@ -55,24 +58,44 @@ class MetaUnidadesController extends Controller
         }
     }
 
-    public function list($client_endpoint_id) {
+    public function list(Request $request) {
         try {
-            $client = Cliente::where('cliente_endpoint_id', $client_endpoint_id)->first();
+            $validatedData = $request->validate([
+                'arraysAreas' => 'required|array',
+                'cliente_endpoint_id' => 'required|integer',
+            ]);
+            $arraysAreas = $validatedData['arraysAreas'];
+            Log::info("message", ['arrays' => $arraysAreas]);
+            $client = Cliente::where('cliente_endpoint_id', $validatedData['cliente_endpoint_id'])->first();
 
             if ($client) {
+                $areasIds = array_column($arraysAreas, 'area_id');
                 $data = MetaUnidades::select(
                     'meta_unidades_id',
                     'valor',
                     'fecha_meta',
                     'updated_at',
+                    'area_id_groot',
                     'usuario',
                 )->where('clientes_id', $client->id)
                 ->orderBy('fecha_meta', 'desc')
-                ->get();
+                ->get()
+                ->map(function ($item) use ($areasIds, $arraysAreas) {
+                    if (in_array($item->area_id_groot, $areasIds)) {
+                        foreach ($arraysAreas as $area) {
+                            if ($item->area_id_groot === $area['area_id']) {
+                                $item->area_id_groot = $area['nombre_area'];
+                            }
+                        }
+                    }
+                    return $item;
+                });
                 return response()->json(['data' => $data], 200);
             } else {
                 return response()->json(['title' => 'Error al guardar.', 'message' => 'Cliente no encontrado en la BD.'], 404);
             }
+        } catch (ValidationException $e) {
+            return response()->json(['title' => 'Error de validación.', 'message' => 'Error en las unidades mensuales ingresadas.', 'error' => $e->getMessage()], 422);
         } catch (\Exception $e) {
             return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo con el servidor.', 'error' => $e->getMessage()], 500);
         }

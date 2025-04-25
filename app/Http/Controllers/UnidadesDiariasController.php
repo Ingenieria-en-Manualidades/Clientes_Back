@@ -20,6 +20,7 @@ class UnidadesDiariasController extends Controller
                 'valor' => 'required|integer',
                 'fecha_programacion' => 'required|date',
                 'cliente_endpoint_id' => 'required|integer',
+                'area_id' => 'required|integer',
                 'usuario' => 'required|string',
             ]);
             $clienteID = Cliente::where('cliente_endpoint_id', $validatedData['cliente_endpoint_id'])->first();
@@ -30,6 +31,7 @@ class UnidadesDiariasController extends Controller
                 ->join('clientes as c', 'mu.clientes_id', '=', 'c.id')
                 ->where('mu.fecha_meta', 'like', $dateMeta->format('Y') .'-'. $dateMeta->format('m') .'%')
                 ->where('c.cliente_endpoint_id', '=', $validatedData['cliente_endpoint_id'])
+                ->where('mu.area_id_groot', '=', $validatedData['area_id'])
                 ->whereNull('mu.deleted_at')
                 ->first();
 
@@ -61,7 +63,7 @@ class UnidadesDiariasController extends Controller
             return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un error al guardar las unidades diarias.', 'error' => $e->getMessage()], 500);
         }
     }
-
+    
     public function list($meta_unidades_id) {
         try {
             $metaUnidades = MetaUnidades::where('meta_unidades_id', $meta_unidades_id)->first();
