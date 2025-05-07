@@ -65,7 +65,7 @@ class MetaUnidadesController extends Controller
                 'cliente_endpoint_id' => 'required|integer',
             ]);
             $arraysAreas = $validatedData['arraysAreas'];
-            Log::info("message", ['arrays' => $arraysAreas]);
+
             $client = Cliente::where('cliente_endpoint_id', $validatedData['cliente_endpoint_id'])->first();
 
             if ($client) {

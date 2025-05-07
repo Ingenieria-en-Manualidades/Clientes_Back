@@ -100,8 +100,19 @@ try {
 
     $tokenName = 'TOKEN CLIENTE: ' . $user->name;
     $token = $user->createToken($tokenName,['read', 'create', 'update', 'delete'])->plainTextToken;
-    $clientesEndpointIds = $user->clientes->pluck('cliente_endpoint_id');
-
+    // $clientesEndpointIds = $user->clientes->pluck('cliente_endpoint_id');
+    $clientesEndpointIds = DB::table('cliente_user as cu')
+    ->join('clientes as c', 'c.id', '=', 'cu.cliente_id')
+    ->select('c.cliente_endpoint_id')
+    ->where('cu.user_id', $user->id)
+    ->whereNull('cu.deleted_at')
+    ->whereNull('c.deleted_at')
+    ->orderBy('c.nombre','asc')
+    ->get()
+    ->map(function ($item) {
+        return $item->cliente_endpoint_id;
+    });
+    
     $this->clearLoginAttempts($request);
 
     return response()->json([

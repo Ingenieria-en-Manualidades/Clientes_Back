@@ -8,12 +8,14 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\Admon\UserController;
 use App\Http\Controllers\CalidadController;
+use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\AccidentesController;
 use App\Http\Controllers\ObjetivoController;
 use App\Http\Controllers\Tablero_SaeController;
 use App\Http\Controllers\IndicadoresController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\MetaUnidadesController;
+use App\Http\Controllers\ClienteUserController;
 use App\Http\Controllers\UnidadesDiariasController;
 
 // Authentication Routes
@@ -53,6 +55,16 @@ Route::post('/guardarTablero', [Tablero_SaeController::class, 'create']);
 // Permission Routes
 Route::post('/relacionarUsuarioPermiso', [PermissionController::class, 'guardarUserPermission']);
 
+////////////////////////////////////
+// Cliente_user Routes
+Route::get('/getClientsByUserId', [ClienteUserController::class, 'getClientsByUserId']);
+//-----------------------------------getClientsByIds
+
+////////////////////////////////////
+// Clientes Routes
+Route::get('/getClientsByIds/{arrayIds}', [ClienteController::class, 'getClientsByIds']);
+//-----------------------------------
+
 // File Routes
 // Route::get('/createFile', [CalidadController::class, 'createFile']);
 Route::post('/guardarArchivo', [FileController::class, 'saveFileCalidad']);
@@ -60,6 +72,7 @@ Route::post('/listarArchivos', [FileController::class, 'store']);
 Route::post('/descargar-pdf', [FileController::class, 'downloadFile']);
 Route::post('/deleteFile', [FileController::class, 'delete']);
 
+////////////////////////////////////
 // Unidades Mensuales Routes
 Route::post('/metaUnidadesExists', [MetaUnidadesController::class, 'exists']);
 Route::post('/createMetaUnidades', [MetaUnidadesController::class, 'create']);
@@ -67,10 +80,13 @@ Route::post('/updateMetaUnidades', [MetaUnidadesController::class, 'update']);
 Route::post('getListUnidadesMeta', [MetaUnidadesController::class, 'list']);
 Route::get('getMetaUnidades/{meta_unidades_id}', [MetaUnidadesController::class, 'getMetaUnidades']);
 Route::get('getAreas/{clienteID}', [MetaUnidadesController::class, 'getAreasImec']);
+//-----------------------------------
 
+////////////////////////////////////
 // Unidades Diarias Routes
 Route::post('/getUnidadesDiarias', [UnidadesDiariasController::class, 'getUnidadesDiarias']); //API GROOT
 Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);
 Route::post('/updateUnidadesDiarias', [UnidadesDiariasController::class, 'update']);
 Route::get('/getListUnidadesDiarias/{meta_unidades_id}', [UnidadesDiariasController::class, 'list']);
 Route::get('/getUnidadesDiariaID/{unidades_diaria_id}', [UnidadesDiariasController::class, 'getUnidadesDiariaID']);
+//-----------------------------------

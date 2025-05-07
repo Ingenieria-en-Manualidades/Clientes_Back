@@ -168,8 +168,8 @@ class CalidadController extends Controller
                                 // }
                                 // Storage::disk('evidencias')->exists($routeFiles);
                             }
-                            Log::info("RUTAS: ", ['rutas' => $routeFiles]);
-                            Log::info("VALORES: ", ['valorFile' => $valorFile]);
+                            // Log::info("RUTAS: ", ['rutas' => $routeFiles]);
+                            // Log::info("VALORES: ", ['valorFile' => $valorFile]);
                             
                             // Storage::disk('evidencias')->files();
                             // En caso de haber ya haber un valor enviamos un mensaje avisandolo.
