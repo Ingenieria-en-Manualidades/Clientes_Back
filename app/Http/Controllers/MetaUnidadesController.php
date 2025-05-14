@@ -42,6 +42,7 @@ class MetaUnidadesController extends Controller
                     $objMetaUnidades = new MetaUnidades();
                     $objMetaUnidades->valor = $validatedData['valor'];
                     $objMetaUnidades->fecha_meta = $validatedData['fecha_meta'];
+                    $objMetaUnidades->actualizaciones = 1;
                     $objMetaUnidades->clientes_id = $clienteID->id;
                     $objMetaUnidades->usuario = $validatedData['usuario'];
                     $objMetaUnidades->area_id_groot = $validatedData['area_id'];
@@ -123,21 +124,22 @@ class MetaUnidadesController extends Controller
                 'valor' => 'required|integer',
                 'usuario' => 'required|string',
                 'meta_unidades_id' => 'required|string',
+                'motivo_actualizacion' => 'required|string',
             ]);
 
             $metaUnidades = MetaUnidades::where('meta_unidades_id', $validatedData['meta_unidades_id'])->first();
 
             if ($metaUnidades) {
-                $updated = MetaUnidades::where('meta_unidades_id', $validatedData['meta_unidades_id'])->update([
-                    'valor' => $validatedData['valor'],
-                    'usuario' => $validatedData['usuario'],
-                ]);
-
-                if ($updated) {
-                    return response()->json(['title' => 'Actualización exitosa.', 'message' => 'Meta de unidades actualizada correctamente.'], 200);
-                } else {
-                    return response()->json(['title' => 'Actualización fallida.', 'message' => 'No se pudo actualizar la meta de unidades'], 400);
-                }
+                Log::info("message", ['metaUnidades' => $metaUnidades]);
+                // $newMetaUnidades = new MetaUnidades();
+                // $newMetaUnidades->valor = $validatedData['valor'];
+                // $newMetaUnidades->fecha_meta = ;
+                // $newMetaUnidades->actualizaciones = 1;
+                // $newMetaUnidades->clientes_id = ;
+                // $newMetaUnidades->usuario = $validatedData['usuario'];
+                // $newMetaUnidades->area_id_groot = ;
+                // $newMetaUnidades->save();
+                return response()->json(['meta_unidades' => "exito"], 200);
             } else {
                 return response()->json(['title' => 'Error en la meta.', 'message' => 'Meta no encontrada en la BD.'], 404);
             }
