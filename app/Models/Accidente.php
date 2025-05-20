@@ -10,7 +10,7 @@ class accidente extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'CLIENTS.accidentes';
+    protected $table = 'accidentes';
     protected $primaryKey = 'accidentes_id';
 
     protected $fillable = [

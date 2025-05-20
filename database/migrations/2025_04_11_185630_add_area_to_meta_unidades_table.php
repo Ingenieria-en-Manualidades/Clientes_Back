@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('CLIENTS.meta_unidades', function (Blueprint $table) {
+        Schema::table('meta_unidades', function (Blueprint $table) {
             $table->unsignedBigInteger('area_id_groot')->nullable();
         });
     }
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('CLIENTS.meta_unidades', function (Blueprint $table) {
+        Schema::table('meta_unidades', function (Blueprint $table) {
             $table->dropColumn('area_id_groot');
         });
     }

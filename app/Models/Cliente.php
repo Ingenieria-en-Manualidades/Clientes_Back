@@ -9,9 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Cliente extends Model
 {
-    use HasFactory, SoftDeletes; 
+    use HasFactory, SoftDeletes;
 
-    protected $table = 'CLIENTS.clientes';
+    protected $table = 'clientes';
     protected $primaryKey = 'id';
 
     protected $fillable = ['nombre', 'cliente_endpoint_id', 'activo'];
