@@ -76,7 +76,7 @@ Route::post('/deleteFile', [FileController::class, 'delete']);
 // Unidades Mensuales Routes
 Route::post('/metaUnidadesExists', [MetaUnidadesController::class, 'exists']);
 Route::post('/createMetaUnidades', [MetaUnidadesController::class, 'create']);
-Route::post('/updateMetaUnidades', [MetaUnidadesController::class, 'update']);
+Route::put('/updateMetaUnidades', [MetaUnidadesController::class, 'update']);
 Route::post('getListUnidadesMeta', [MetaUnidadesController::class, 'list']);
 Route::get('getMetaUnidades/{meta_unidades_id}', [MetaUnidadesController::class, 'getMetaUnidades']);
 Route::get('getAreas/{clienteID}', [MetaUnidadesController::class, 'getAreasImec']);

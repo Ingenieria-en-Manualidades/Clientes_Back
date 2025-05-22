@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use DateTime;
+use Carbon\Carbon;
 use App\Models\Cliente;
 use App\Models\MetaUnidades;
 use Illuminate\Http\Request;
@@ -65,32 +66,42 @@ class MetaUnidadesController extends Controller
                 'arraysAreas' => 'required|array',
                 'cliente_endpoint_id' => 'required|integer',
             ]);
+
             $arraysAreas = $validatedData['arraysAreas'];
+            // Log::info("data", ['arraysAreas' => $arraysAreas]);
 
             $client = Cliente::where('cliente_endpoint_id', $validatedData['cliente_endpoint_id'])->first();
 
             if ($client) {
                 $areasIds = array_column($arraysAreas, 'area_id');
-                $data = MetaUnidades::select(
+
+                $unitsGoals = MetaUnidades::select(
                     'meta_unidades_id',
                     'valor',
                     'fecha_meta',
-                    'updated_at',
+                    'actualizaciones',
                     'area_id_groot',
                     'usuario',
+                    'motivo_actualizacion',
                 )->where('clientes_id', $client->id)
                 ->orderBy('fecha_meta', 'desc')
-                ->get()
-                ->map(function ($item) use ($areasIds, $arraysAreas) {
+                ->get();
+
+                // Reemplazar ID de área por nombre si aplica
+                $data = $unitsGoals->map(function ($item) use ($areasIds, $arraysAreas) {
                     if (in_array($item->area_id_groot, $areasIds)) {
-                        foreach ($arraysAreas as $area) {
-                            if ($item->area_id_groot === $area['area_id']) {
-                                $item->area_id_groot = $area['nombre_area'];
-                            }
+                        $areaMatch = collect($arraysAreas)->firstWhere('area_id', $item->area_id_groot);
+                        if ($areaMatch) {
+                            $item->area_id_groot = $areaMatch['nombre_area'];
                         }
                     }
+
+                    $dateGoal = new DateTime($item->fecha_meta);
+                    $item->fecha_meta = $dateGoal->format('Y-m');
+
                     return $item;
                 });
+
                 return response()->json(['data' => $data], 200);
             } else {
                 return response()->json(['title' => 'Error al guardar.', 'message' => 'Cliente no encontrado en la BD.'], 404);
@@ -130,20 +141,22 @@ class MetaUnidadesController extends Controller
             $metaUnidades = MetaUnidades::where('meta_unidades_id', $validatedData['meta_unidades_id'])->first();
 
             if ($metaUnidades) {
-                Log::info("message", ['metaUnidades' => $metaUnidades]);
-                // $newMetaUnidades = new MetaUnidades();
-                // $newMetaUnidades->valor = $validatedData['valor'];
-                // $newMetaUnidades->fecha_meta = ;
-                // $newMetaUnidades->actualizaciones = 1;
-                // $newMetaUnidades->clientes_id = ;
-                // $newMetaUnidades->usuario = $validatedData['usuario'];
-                // $newMetaUnidades->area_id_groot = ;
-                // $newMetaUnidades->save();
-                return response()->json(['meta_unidades' => "exito"], 200);
+                $newMetaUnidades = new MetaUnidades();
+                $newMetaUnidades->valor = $validatedData['valor'];
+                $newMetaUnidades->fecha_meta = $metaUnidades->fecha_meta;
+                $newMetaUnidades->actualizaciones = $metaUnidades->actualizaciones + 1;
+                $newMetaUnidades->clientes_id = $metaUnidades->clientes_id;
+                $newMetaUnidades->usuario = $validatedData['usuario'];
+                $newMetaUnidades->area_id_groot = $metaUnidades->area_id_groot;
+                $newMetaUnidades->save();
+
+                $metaUnidades->motivo_actualizacion = $validatedData['motivo_actualizacion'];
+                $metaUnidades->save();
+
+                return response()->json(['title' => "Actualización exitosa.", 'message' => 'Meta de unidades actualizada correctamente.'], 200);
             } else {
                 return response()->json(['title' => 'Error en la meta.', 'message' => 'Meta no encontrada en la BD.'], 404);
             }
-
         } catch (ValidationException $e) {
             return response()->json(['title' => 'Error de validación.', 'message' => 'Error en las unidades mensuales ingresadas.', 'error' => $e->getMessage()], 422);
         } catch (\Exception $e) {

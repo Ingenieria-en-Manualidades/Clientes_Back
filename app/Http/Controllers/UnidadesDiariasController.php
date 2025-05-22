@@ -24,35 +24,39 @@ class UnidadesDiariasController extends Controller
                 'usuario' => 'required|string',
             ]);
             $clienteID = Cliente::where('cliente_endpoint_id', $validatedData['cliente_endpoint_id'])->first();
+
             if ($clienteID) {
                 $dateMeta = new DateTime($validatedData['fecha_programacion']);
 
-                $meta = DB::table('meta_unidades as mu')
+                $goals = DB::table('meta_unidades as mu')
                 ->join('clientes as c', 'mu.clientes_id', '=', 'c.id')
-                ->where('mu.fecha_meta', 'like', $dateMeta->format('Y') .'-'. $dateMeta->format('m') .'%')
+                ->where('mu.fecha_meta', 'like', $dateMeta->format('Y-m') .'%')
                 ->where('c.cliente_endpoint_id', '=', $validatedData['cliente_endpoint_id'])
                 ->where('mu.area_id_groot', '=', $validatedData['area_id'])
                 ->whereNull('mu.deleted_at')
-                ->first();
+                ->get();
 
-                if ($meta) {
+                if ($goals->isEmpty()) {
+                    return response()->json(['title' => 'Meta inexistente.','message' => 'No existe una meta de unidades para el día ingresado.'], 404);
+                } else {
+                    $goalsIds = $goals->pluck('meta_unidades_id')->toArray();
+                    // Log::info("data", ['goals' => $goals]);
                     $dateExisting = UnidadesDiarias::where('fecha_programacion', $validatedData['fecha_programacion'])
-                    ->where('meta_unidades_id', $meta->meta_unidades_id)
+                    ->whereIn('meta_unidades_id', $goalsIds)
                     ->first();
 
                     if ($dateExisting) {
                         return response()->json(['title' => 'Unidades existentes.', 'message' => 'Existen unidades programadas para el día ingresado.'], 409);
                     } else {
+                        $goalRecent = $goals->sortByDesc('actualizaciones')->first();
                         $unidades = new UnidadesDiarias();
                         $unidades->valor = $validatedData['valor'];
                         $unidades->fecha_programacion = $validatedData['fecha_programacion'];
-                        $unidades->meta_unidades_id = $meta->meta_unidades_id;
+                        $unidades->meta_unidades_id = $goalRecent->meta_unidades_id;
                         $unidades->usuario = $validatedData['usuario'];
                         $unidades->save();
                         return response()->json(['title' => 'Guardado con exito.', 'message' => 'Unidades programadas guardadas con exito.'], 200);
                     }
-                } else {
-                    return response()->json(['title' => 'Meta inexistente.','message' => 'No existe una meta de unidades para el día ingresado.'], 404);
                 }
             } else {
                 return response()->json(['title' => 'Error al guardar.', 'message' => 'Cliente no encontrado en la BD.'], 404);
