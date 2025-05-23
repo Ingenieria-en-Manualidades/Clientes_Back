@@ -10,7 +10,7 @@ class Tablero_Sae extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'CLIENTS.tablero_sae';
+    protected $table = 'tablero_sae';
     protected $primaryKey = 'tablero_sae_id';
 
     protected $fillable = ['fecha', 'meta_id', 'cliente_id'];

@@ -10,8 +10,8 @@ class TokensPassword extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'CLIENTS.tokens_passwords';
+    protected $table = 'tokens_passwords';
     protected $primaryKey = 'id';
-    
+
     protected $fillable = ['id_username','username', 'email', 'token', 'expires_at'];
 }

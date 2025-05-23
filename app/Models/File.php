@@ -10,7 +10,7 @@ class File extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'CLIENTS.files';
+    protected $table = 'files';
     protected $primaryKey = 'files_id';
 
     protected $fillable = [

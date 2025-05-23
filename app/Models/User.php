@@ -26,7 +26,7 @@ class User extends Authenticatable
     use HasRoles;
     use SoftDeletes;
 
-    protected $table = 'CLIENTS.users';
+    protected $table = 'users';
     protected $primaryKey = 'id';
 
     /**
