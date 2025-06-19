@@ -123,4 +123,19 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Security of our APIs
+    |--------------------------------------------------------------------------
+    |
+    | Variables that allow you to use routes for requests that have them, 
+    | defining the key type and its value.
+    |
+    | Made by: JAVELASCO
+    |
+    */
+
+    'api_key_app_clients' => env('API_KEY_CLIENTS',''),
+    'type_key_app_clients' => env('TYPE_KEY_CLIENTS','',),
+
 ];

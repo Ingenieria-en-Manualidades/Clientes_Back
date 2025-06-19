@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 use DateTime;
+use ZipArchive;
 use App\Models\File;
 use App\Models\Cliente;
 use App\Models\Tablero_Sae;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\File as FileForStorage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FileController extends Controller
 {
@@ -141,12 +145,40 @@ class FileController extends Controller
                     Storage::disk('evidencias')->makeDirectory($directorio);
                 }
 
-                $nombreArchivo = $nombreArchivo = $fecha->format('Y-m-d') . "_" . $request->file('archivo')->getClientOriginalName();
+                //----------------------
+                // Construimos el nombre del archivo zip, con este formato "2025-06-03_nameFile.zip".
+                $originalName = $request->file('archivo')->getClientOriginalName();
+                $dateFile = $fecha->format('Y-m-d');
+                $fileNameWithoutExtension = pathinfo($originalName, PATHINFO_FILENAME);
+                $zipFileName = "{$dateFile}_{$fileNameWithoutExtension}.zip";
 
-                $path = $request->file('archivo')->storeAs($directorio, $nombreArchivo, 'evidencias');
+                // Crear un archivo ZIP en una ruta temporal.
+                $temporaryZipPath = sys_get_temp_dir() . '/' . Str::random(12) . '_' . $zipFileName;
+                $zip = new ZipArchive();
+                if ($zip->open($temporaryZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                    return response()->json(['message' => 'No se pudo crear el ZIP en ruta temporal.'], 404);
+                }
+
+                // Añadir el PDF original dentro del ZIP.
+                $actualPathPDF = $request->file('archivo')->getPathname();
+                $zip->addFile($actualPathPDF, $originalName);
+                $zip->close();
+
+                // Guardar el ZIP en el disco ‘evidencias’ dentro de $directorio
+                $storagePath = "{$directorio}/{$zipFileName}";
+                Storage::disk('evidencias')->putFileAs(
+                    $directorio,
+                    new FileForStorage($temporaryZipPath),
+                    $zipFileName
+                );
+
+                // Eliminar el archivo temporal
+                @unlink($temporaryZipPath);
+
+                // $path = $request->file('archivo')->storeAs($directorio, $nombreArchivo, 'evidencias');
                 
                 $file = new File();
-                $file->ruta = $path;
+                $file->ruta = $storagePath;
                 $file->tipo = $request->file('archivo')->getClientOriginalExtension();
                 $file->tablero_sae_id = $validatedData['tablero_sae_id'];
                 $file->save();
@@ -154,7 +186,7 @@ class FileController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Calidad creada con éxito',
-                    'data' => $request,
+                    'data' => [ 'ruta_zip' => $storagePath],
                 ], 200);
             }
         } catch (ValidationException $e) {
@@ -180,12 +212,42 @@ class FileController extends Controller
             ]);
 
             if (Storage::disk('evidencias')->exists($validatedData['url'])) {
-                return Storage::disk('evidencias')->download($validatedData['url']);
+                // Obtiene la ruta del zip.
+                $zipFullPath = storage::disk('evidencias')->path($validatedData['url']);
+                $zip = new ZipArchive();
+
+                // Intenta abrir el ZIP.
+                if ($zip->open($zipFullPath) !== true) {
+                    return response()->json(['message' => 'Fallo al abrir el ZIP'], 500);
+                }
+
+                // Verifica si el ZIP no esta vacío y en caso de no llamamos al unico pdf del ZIP.
+                if ($zip->numFiles === 0) {
+                    $zip->close();
+                    return response()->json(['message' => 'El ZIP está vacío.'], 500);
+                }
+                $pdf = $zip->getNameIndex(0);
+
+                // Abre un stream al archivo.
+                $stream = $zip->getStream($pdf);
+                if ($stream === false) {
+                    $zip->close();
+                    return response()->json(['message' => 'No se pudo abrir el archivo dentro de ZIP.'], 500);
+                }
+
+                // Prepara una respuesta en streaming con encabezado PDF.
+                $response = new StreamedResponse(function() use($stream, $zip) {
+                    fpassthru($stream);
+                    fclose($stream);
+                    $zip->close();
+                }, 200, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => "attachment; filename=\"{$pdf}\"",
+                ]);
+
+                return $response;
             } else {
-                return response()->json([
-                    'message' => 'Archivo no encontrado.',
-                    'errors' => $request
-                ], 422);
+                return response()->json(['message' => 'Archivo no encontrado.','errors' => $request], 422);
             }
         } catch (\Exception $e) {
             // Si ocurre cualquier otro error, devolver un error general

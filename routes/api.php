@@ -84,7 +84,7 @@ Route::get('getAreas/{clienteID}', [MetaUnidadesController::class, 'getAreasImec
 
 ////////////////////////////////////
 // Unidades Diarias Routes
-Route::post('/getUnidadesDiarias', [UnidadesDiariasController::class, 'getUnidadesDiarias']); //API GROOT
+Route::get('/getDailyUnitsOfDay/{date}/{client_id}', [UnidadesDiariasController::class, 'getDailyUnitsOfDay']); //API GROOT
 Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);
 Route::post('/updateUnidadesDiarias', [UnidadesDiariasController::class, 'update']);
 Route::get('/getListUnidadesDiarias/{meta_unidades_id}', [UnidadesDiariasController::class, 'list']);

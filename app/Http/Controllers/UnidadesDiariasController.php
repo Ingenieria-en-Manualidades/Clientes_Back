@@ -138,33 +138,50 @@ class UnidadesDiariasController extends Controller
         }
     }
 
-    public function getUnidadesDiarias(Request $request) {
+    /**
+     * Method that returns the units for a day, separated by area, and the total sum of units for each area.
+     * Designed to be compared with online production units in IMEC+.
+     * 
+     */
+    public function getDailyUnitsOfDay($date, $client_id, Request $request) {
+        // Get the token from the 'Authorization' header.
+        $token = $request->header(config('app.type_key_app_clients'));
+
+        $expectedToken = config('app.api_key_app_clients'); // Token predefinido
+
+        // Check if the token in the request matches the predefined token.
+        if ($token !== $expectedToken) {
+            return response()->json(['status' => 'error', 'data' => 'Token no válido', 'message' => 'Error en la petición al enviar el token incorrecto'], 401);
+        }
+
         try {
-            $validateData = $request->validate([
-                'fecha_programacion' => 'required|date',
-                'cliente_endpoint_id' => 'required|integer',
-            ]);
-
-            $data = DB::table('unidades_diarias as ud')
-            ->join('meta_unidades as mu', 'ud.meta_unidades_id', '=', 'mu.meta_unidades_id')
-            ->join('clientes as c', 'mu.clientes_id', '=', 'c.id')
-            ->select(
-                'ud.valor as valor_diarias',
-                'mu.valor as valor mensual',
-            )
-            ->where('ud.fecha_programacion', $validateData['fecha_programacion'])
-            ->where('c.cliente_endpoint_id', $validateData['cliente_endpoint_id'])
-            ->whereNull('ud.deleted_at')
+            $data = DB::table('clients.meta_unidades as mu')
+            ->join('clients.unidades_diarias as ud', 'ud.meta_unidades_id', '=', 'mu.meta_unidades_id')
+            ->join('clients.clientes as c', 'mu.clientes_id', '=', 'c.id')
+            ->join('public.area as a', 'mu.area_id_groot', '=', 'a.area_id')
+            ->select([
+                'ud.unidades_diarias_id',
+                'ud.fecha_programacion',
+                'a.nombre_area',
+                'ud.valor as valor_diario',
+                'mu.valor as valor_meta',
+                DB::raw('SUM(mu.valor) OVER () AS total_valor_meta'),
+                DB::raw('SUM(ud.valor) OVER () AS total_valor_diarias'),
+            ])
+            ->where('ud.fecha_programacion', $date)
+            ->where('c.cliente_endpoint_id', $client_id)
             ->whereNull('mu.deleted_at')
-            ->first();
+            ->whereNull('ud.deleted_at')
+            ->whereNull('c.deleted_at')
+            ->get();
 
-            if ($data) {
-                return response()->json(['title' => 'Exito.', 'data' => $data], 200);
+            if ($data->isEmpty()) {
+                return response()->json(['status' => 'warning', 'data' => 'Sin unidades por parte del cliente.', 'msg' => 'Unidades no encontradas por parte del cliente.']);
             } else {
-                return response()->json(['title' => 'No hay unidades programadas.'], 404);
+                return response()->json(['status' => 'success', 'data' => $data, 'msg' => 'ok']);
             }
         } catch (\Exception $e) {
-            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un error al guardar las unidades diarias.', 'error' => $e->getMessage()], 500);
+            return response()->json(["status" => "error", "data" => $e->getMessage(), "msg" => 'Error, Recargue la Pagina e Intentelo de Nuevo']);
         }
     }
 }
