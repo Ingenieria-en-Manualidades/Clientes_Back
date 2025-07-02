@@ -151,7 +151,7 @@ class UnidadesDiariasController extends Controller
 
         // Check if the token in the request matches the predefined token.
         if ($token !== $expectedToken) {
-            return response()->json(['status' => 'error', 'data' => 'Token no válido', 'message' => 'Error en la petición al enviar el token incorrecto'], 401);
+            return response()->json(['status' => 'error', 'data' => 'Token no válido', 'msg' => 'Error en la petición al enviar el token incorrecto'], 401);
         }
 
         try {
@@ -162,6 +162,7 @@ class UnidadesDiariasController extends Controller
             ->select([
                 'ud.unidades_diarias_id',
                 'ud.fecha_programacion',
+                'a.area_id',
                 'a.nombre_area',
                 'ud.valor as valor_diario',
                 'mu.valor as valor_meta',
@@ -170,13 +171,14 @@ class UnidadesDiariasController extends Controller
             ])
             ->where('ud.fecha_programacion', $date)
             ->where('c.cliente_endpoint_id', $client_id)
+            ->whereIn('a.nombre_area', ['SW32', 'MAQUILA', 'EXPORTACION'])
             ->whereNull('mu.deleted_at')
             ->whereNull('ud.deleted_at')
             ->whereNull('c.deleted_at')
             ->get();
 
             if ($data->isEmpty()) {
-                return response()->json(['status' => 'warning', 'data' => 'Sin unidades por parte del cliente.', 'msg' => 'Unidades no encontradas por parte del cliente.']);
+                return response()->json(['status' => 'warning', 'data' => 'Sin unidades programadas.', 'msg' => 'Unidades no programadas por parte del cliente.']);
             } else {
                 return response()->json(['status' => 'success', 'data' => $data, 'msg' => 'ok']);
             }
