@@ -171,7 +171,6 @@ class UnidadesDiariasController extends Controller
             ])
             ->where('ud.fecha_programacion', $date)
             ->where('c.cliente_endpoint_id', $client_id)
-            ->whereIn('a.nombre_area', ['SW32', 'MAQUILA', 'EXPORTACION'])
             ->whereNull('mu.deleted_at')
             ->whereNull('ud.deleted_at')
             ->whereNull('c.deleted_at')
