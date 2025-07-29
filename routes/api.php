@@ -34,6 +34,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::get('/roles', [RolePermissionController::class, 'getRoles']);
 Route::get('roles-clientes', [UserController::class, 'getRolesAndClientes']);
 Route::post('/updatePassword', [UserController::class, 'updatePassword']);
+Route::post('/updatePasswordExpiration', [AuthController::class, 'updatePassword'])->middleware('auth:sanctum');
 
 // Meta Routes
 Route::post('/guardarMeta', [MetaController::class, 'create']);

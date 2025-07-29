@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Hash;
 use Exception;
 
 
@@ -119,7 +120,8 @@ try {
         'access_token' => $token,
         'token_type' => 'Bearer',
         'clientes_endpoint_ids' => $clientesEndpointIds,
-        'permissions' => $permissions
+        'permissions' => $permissions,
+        'reset_password' => $user->reset_password,
     ]);
 
 } catch (Exception $e) {
@@ -336,5 +338,88 @@ try {
     protected function throttleKey(Request $request)
     {
         return strtolower($request->input('username')).'|'.$request->ip();
+    }
+
+    /**
+     * Update the authenticated user's password because the previous one has expired.
+     *
+     * @desc This method validates the new password, encrypts it, and updates the user record.
+     *       It also sets an expiration date for the password change; 
+     *       the new date is one month after the password update.
+     * @param Request $request The HTTP request containing the new password.
+     * @return \Illuminate\Http\JsonResponse Response indicating the success or failure of the update.
+     */
+    public function updatePassword(Request $request)
+    {
+        try {
+            // If encrypted_data is received, decrypt and extract the data.
+            if ($request->has('encrypted_password')) {
+                // Decrypt the encrypted password and the key to decrypt.
+                $encryptedHex = $request->input('encrypted_password');
+                $keyValue = env('KEY_ENCRYPTED');
+
+                $decryptedData = $this->decryptAES($encryptedHex, $keyValue); // Decrypt the encrypted password and convert it to json format. 
+                $credentials = json_decode($decryptedData, true); // Convert the decrypted data to an associative array.
+
+                // Check if the JSON was decoded successfully.
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    return response()->json(['title' => 'Error de desencriptado.', 'message' => 'No se pudo decodificar los datos desencriptados.'], 400);
+                }
+
+                // Overwrite the request values with the decrypted ones.
+                $request->merge([
+                    'password' => $credentials['password'] ?? null,
+                ]);
+            } else {
+                return response()->json(['title' => 'Datos cifrados no proporcionados.', 'message' => 'No se recibió el campo encrypted_data.'], 400);
+            }
+
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['title' => 'Usuario no autenticado.', 'message' => 'No se encontró el usuario autenticado.'], 404);
+            }
+
+            // Verify that the new password is not the same as the previous one.
+            if (Hash::check($request->input('password'), $user->password)) {
+                return response()->json(['title' => 'Contraseña repetida.', 'message' => 'La nueva contraseña no puede ser igual a la anterior.'], 409);
+            }
+            
+            $user->password = Hash::make($request->input('password')); // Encrypts the new password.
+            $user->reset_password = \Carbon\Carbon::now()->addMonth(); // Sets the reset password date to one month from now.
+            $user->save();
+
+            return response()->json(['title' => 'Actualización exitosa.', 'message' => 'Contraseña actualizada exitosamente.'], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['title' => 'Falta de campos.', 'message' => 'Faltan campos que llenar.', 'error' => $e->errors()], 406);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Fallo al actualizar.', 'message' => 'Error al actualizar la contraseña por expiración.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Decrypts the AES encrypted data.
+     *
+     * @desc This method decrypts the provided encrypted data using AES-256-CBC.
+     *       It requires a key and an initialization vector (IV) for decryption.
+     * @param string $encryptedHex The encrypted data in hexadecimal format.
+     * @param string $keyValue The key used for decryption.
+     * @return string The decrypted data.
+     */
+    protected function decryptAES($encryptedHex, $keyValue)
+    {
+        $salt = 'salt'; 
+        $iterations = 100; 
+
+        $ivHex = substr($encryptedHex, 0, 32);
+        $cipherTextHex = substr($encryptedHex, 32); 
+
+        $iv = hex2bin($ivHex);
+        $cipherText = hex2bin($cipherTextHex);
+
+        $key = hash_pbkdf2('sha256', $keyValue, $salt, $iterations, 32, true);
+
+        $decrypted = openssl_decrypt($cipherText, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+
+        return $decrypted;
     }
 }
