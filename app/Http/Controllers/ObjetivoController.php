@@ -46,8 +46,18 @@ class ObjetivoController extends Controller
             ->get();
 
             // Consultamos si ya existe un objetivo creado con la misma fecha de hoy, ya que no puede haber dos objetivos con la misma fecha.
-            $verificacionObjetivo = Objetivo::select('objetivos.objetivos_id')
-            ->where('objetivos.fecha','like', $dia . '%')
+            // $verificacionObjetivo = Objetivo::select('objetivos.objetivos_id')
+            // ->where('objetivos.fecha','like', $dia . '%')
+            // ->get();
+            $verificacionObjetivo = DB::table('objetivos as o')
+            ->join('tablero_sae as ts', 'ts.tablero_sae_id', '=', 'o.tablero_sae_id')
+            ->join('clientes as c', 'c.id', '=', 'ts.cliente_id')
+            ->select('o.*')
+            ->where('o.fecha', 'like', $dia . '%')
+            ->where('c.cliente_endpoint_id', '=', $validatedData['cliente_id'])
+            ->whereNull('o.deleted_at')
+            ->whereNull('ts.deleted_at')
+            ->whereNull('c.deleted_at')
             ->get();
 
             // Verificamos si la consulta retorno un objetivo con la misma fecha ingresada, en caso de no haber ninguna continua con el guardado.

@@ -360,107 +360,48 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Asignar manejador de eventos a los botones de resetear contraseña del usuario usuario
     document.querySelectorAll('.reset-button').forEach(button => {
         button.addEventListener('click', function () {
-            const id = this.getAttribute('data-id');        
-            const modalBody = document.querySelector('#modalPurple .modal-body');
-    
-            modalBody.innerHTML = `
-                <form id="user-edit-form" class="space-y-4">
-                    <div class="form-group mb-4">
-                        <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Nueva Contraseña</label>
-                        <input type="password" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" id="password" name="password" required>
-                        <p id="password-error" class="text-red-500 text-sm mt-1 hidden">La contraseña debe ser alfanumérica y tener al menos 8 caracteres.</p>
-                    </div>
-                    <div class="form-group mb-4">
-                        <label for="password_confirmation" class="block text-gray-700 text-sm font-bold mb-2">Confirmar Contraseña</label>
-                        <input type="password" class="form-control block w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" id="password_confirmation" name="password_confirmation" required>
-                        <p id="password-confirm-error" class="text-red-500 text-sm mt-1 hidden">Las contraseñas no coinciden.</p>
-                    </div>
-                    <button type="button" id="confirm-change-btn" class="btn btn-primary bg-blue hover:bg-cyan-200 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md">Confirmar Cambio</button>
-                </form>`;
-    
-            // Validaciones de las contraseñas (misma lógica que antes)
-            const passwordInput = document.getElementById('password');
-            const passwordConfirmationInput = document.getElementById('password_confirmation');
-            const passwordError = document.getElementById('password-error');
-            const passwordConfirmError = document.getElementById('password-confirm-error');
-            const confirmButton = document.getElementById('confirm-change-btn');
-    
-            const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
-    
-            passwordInput.addEventListener('input', function () {
-                if (!passwordRegex.test(passwordInput.value)) {
-                    passwordError.classList.remove('hidden');
-                    confirmButton.disabled = true;
-                } else {
-                    passwordError.classList.add('hidden');
-                    confirmButton.disabled = passwordInput.value !== passwordConfirmationInput.value;
-                }
-            });
-    
-            passwordConfirmationInput.addEventListener('input', function () {
-                if (passwordInput.value !== passwordConfirmationInput.value) {
-                    passwordConfirmError.classList.remove('hidden');
-                    confirmButton.disabled = true;
-                } else {
-                    passwordConfirmError.classList.add('hidden');
-                    confirmButton.disabled = !passwordRegex.test(passwordInput.value);
-                }
-            });
-    
-            // Enviar los datos al servidor usando Fetch API cuando se presiona el botón
-            confirmButton.addEventListener('click', function () {
-                const password = passwordInput.value;
-                const passwordConfirmation = passwordConfirmationInput.value;
-    
-                // Solo continuar si las contraseñas son válidas
-                if (passwordRegex.test(password) && password === passwordConfirmation) {
-                    fetch(`/usuarios/${id}/actualizar-contrasena`, {
+            const userId = this.getAttribute('data-id');
+            const userName = this.getAttribute('data-nombre');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            Swal.fire({
+                title: '¿Restablecer contraseña?',
+                text: `¿Deseas restablecer la contraseña del usuario "${userName}"? Se asignará una contraseña temporal.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, restablecer',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/usuarios/${userId}/reset-user`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                         },
-                        body: JSON.stringify({
-                            password: password,
-                            password_confirmation: passwordConfirmation
-                        })
                     })
                     .then(response => response.json())
                     .then(data => {
-                        if (data.success) {
-                            Swal.fire({
-                                title: 'Éxito',
-                                text: 'La contraseña ha sido actualizada correctamente.',
-                                icon: 'success',
-                                confirmButtonText: 'OK'
-                            }).then(() => {
-                                location.reload(); // Recargar la página o cerrar el modal
-                            });
-                        } else {
-                            if (data.errors) {
-                                // Mostrar errores de validación
-                                const errorMessages = Object.values(data.errors).flat().join('\n');
-                                Swal.fire({
-                                    title: 'Errores de validación',
-                                    text: errorMessages,
-                                    icon: 'error',
-                                    confirmButtonText: 'OK'
-                                });
-                            } else {
-                                Swal.fire({
-                                    title: 'Error',
-                                    text: data.message || 'Hubo un error al actualizar la contraseña.',
-                                    icon: 'error',
-                                    confirmButtonText: 'OK'
-                                });
-                            }
-                        }
+                        Swal.fire({
+                            title: data.title,
+                            text: data.message,
+                            icon: data.success ? 'success' : 'error',
+                            confirmButtonText: 'Aceptar'
+                        });
                     })
+                    .catch(error => {
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Ocurrió un error al restablecer la contraseña.',
+                            icon: 'error',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    });
                 }
             });
         });
     });
-    
-       
 });
 

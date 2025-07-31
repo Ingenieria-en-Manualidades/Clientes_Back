@@ -227,41 +227,24 @@ class UserController extends Controller
         }
     }
 
-    public function ResetPassword(Request $request, $id)
-{
-    $sanitizedPassword = trim(strip_tags($request->input('password')));
-    $sanitizedPasswordConfirmation = trim(strip_tags($request->input('password_confirmation')));
+    public function resetUser(int $id)
+    {
+        try {
+            $newPassword = "Temporal01*";
+            
+            $user = User::findOrFail($id);
 
-    // Validar los datos
-    $request->merge([
-        'password' => $sanitizedPassword,
-        'password_confirmation' => $sanitizedPasswordConfirmation
-    ]);
+            // Coloca la fecha anterior a la actual (ayer)
+            $user->reset_password = \Carbon\Carbon::now()->subDay();
+            $user->password = \Illuminate\Support\Facades\Hash::make($newPassword);
 
-    $validator = Validator::make($request->all(), [
-        'password' => ['required', 'string', 'min:8', 'regex:/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{8,}$/'],
-        'password_confirmation' => ['required', 'same:password']
-    ]);
-
-
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Errores de validación',
-            'errors' => $validator->errors()
-        ], 422);
+            if ($user->save()) {
+                return response()->json(['success' => true, 'title' => 'El usuario ha sido restablecido.', 'message' => 'La nueva contraseña es "Temporal01*".'], 200);
+            } else {
+                return response()->json(['success' => false, 'title' => 'Fallo al restablecer el usuario.', 'message' => 'No se pudo restablecer el usuario.'], 500);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'title' => 'Error desconocido al restablecer el usuario.', 'message' => 'Por favor recarga la página.', 'error' => $e->getMessage()], 500);
+        }
     }
-
-    $user = User::findOrFail($id);
-
-    $user->password = Hash::make($sanitizedPassword);
-    $user->save();
-
-
-    return response()->json([
-        'success' => true,
-        'message' => 'La contraseña ha sido actualizada correctamente.'
-    ]);
-}
-
 }

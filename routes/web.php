@@ -35,7 +35,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     // Rutas para usuarios
     Route::resource('usuarios', UserController::class)->except(['create', 'show', 'edit']);
-    Route::put('/usuarios/{id}/actualizar-contrasena', [UserController::class, 'resetPassword'])->name('usuarios.resetPassword');
+    Route::put('/usuarios/{id}/reset-user', [UserController::class, 'resetUser'])->name('usuarios.resetUser');
+    // Route::put('/usuarios/{id}/actualizar-contrasena', [UserController::class, 'resetPassword'])->name('usuarios.resetPassword');
     Route::get('usuarios/deshabilitados', [UserController::class, 'deshabilitados'])->name('usuarios.deshabilitados');
     Route::get('usuarios/{id}/restaurar', [UserController::class, 'restaurar'])->name('usuarios.restaurar');
     Route::post('/usuarios/toggle-active/{id}', [UserController::class, 'toggleActive'])->name('usuarios.toggleActive');

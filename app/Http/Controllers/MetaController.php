@@ -7,6 +7,7 @@ use App\Models\Meta;
 use App\Models\Cliente;
 use App\Models\Tablero_Sae;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
@@ -31,7 +32,17 @@ class MetaController extends Controller
             // Creamos variable para poder consultar la fecha en la BD con este formato 'yyyy-mm'
             $date = new DateTime($validatedData['fecha']);
 
-            $tableroSae = Tablero_Sae::where('fecha', 'like', $date->format('Y') . '-' . $date->format('m') . '%')->get();
+            // $tableroSae = Tablero_Sae::where('fecha', 'like', $date->format('Y') . '-' . $date->format('m') . '%')
+            // ->where()->get();
+
+            $tableroSae = DB::table('tablero_sae as ts')
+            ->join('clientes as c', 'c.id', '=', 'ts.cliente_id')
+            ->select('ts.*')
+            ->where('ts.fecha', 'like', $date->format('Y') . '-' . $date->format('m') . '%')
+            ->where('c.cliente_endpoint_id', '=', $validatedData['cliente_endpoint_id'])
+            ->whereNull('ts.deleted_at')
+            ->whereNull('c.deleted_at')
+            ->get();
 
             if ($tableroSae->isEmpty()) {
                 $clienteID = Cliente::select('clientes.id')
