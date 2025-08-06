@@ -233,21 +233,26 @@ try {
     }
 
      /**
-     * Verifica si el usuario actual está autenticado y tiene un token válido.
+     * Checks if the current user is authenticated and has a valid token.
      *
-     * @desc Revisa si el usuario tiene un token de sesión válido.
-     * @param Request $request La solicitud HTTP del usuario autenticado.
-     * @return \Illuminate\Http\JsonResponse Respuesta indicando si el usuario está autenticado.
+     * @desc Checks if the user has a valid session token.
+     * @param Request $request The authenticated user's HTTP request.
+     * @return \Illuminate\Http\JsonResponse Response indicating whether the user is authenticated and the date to reset their password.
      */
 
     public function setVerificarLogin(Request $request)
     {
-        $token = $request->user()->tokens;
+        try {
+            $user = $request->user();
+            $token = $user->tokens;
 
-        if (!$token) {
-            return response()->json(['success' => false], 404);
-        }else {
-            return response()->json(['success' => true], 200);
+            if (!$token) {
+                return response()->json(['success' => false], 404);
+            }else {
+                return response()->json(['success' => true, 'reset_password' => $user->reset_password], 200);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Fallo al verificar token.', 'message' => 'Error al verificar token.', 'error' => $e->getMessage()], 500);
         }
     }
 
