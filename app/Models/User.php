@@ -100,4 +100,9 @@ class User extends Authenticatable
     {
         return $this->hasRole($role); // Ejemplo con spatie/laravel-permission
     }
+
+    public function survey()
+    {
+        return $this->hasMany(Survey::class, 'user_id', 'id');
+    }
 }
