@@ -18,6 +18,7 @@ use App\Http\Controllers\MetaUnidadesController;
 use App\Http\Controllers\ClienteUserController;
 use App\Http\Controllers\UnidadesDiariasController;
 use App\Http\Controllers\SurveyController;
+use App\Http\Controllers\PrivacyPolicyController;
 
 // Authentication Routes
 Route::post('login', [AuthController::class, 'login']);
@@ -99,3 +100,9 @@ Route::post('/saveSurvey', [SurveyController::class, 'setSaveSurvey']);
 Route::get('/listCharges', [SurveyController::class, 'getListCharges']);
 Route::get('/listClients', [SurveyController::class, 'getListClients']);
 Route::get('/getInformationUser/{username}', [SurveyController::class, 'getInformationUser']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/policy',        [PrivacyPolicyController::class, 'show']);
+    Route::get('/policy/status', [PrivacyPolicyController::class, 'status']);
+    Route::post('/policy/accept',[PrivacyPolicyController::class, 'accept']);
+});
