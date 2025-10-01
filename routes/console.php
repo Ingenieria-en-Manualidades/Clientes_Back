@@ -181,27 +181,26 @@ Artisan::command('rebranding:send {--type=all} {--limit=0} {--dry-run} {--test=}
         $this->info("[#{$count}] {$email} | {$name} | op={$op} | cliente_id={$r->client_id}" . ($r->user_id ? " | user_id={$r->user_id}" : ''));
 
         if (!$dry) {
-            // Encolar correo
-            Mail::to($email)->queue(new RebrandingMail(
-                name:      $name,
-                email:     $email,
-                operation: $op,
-                surveyUrl: $surveyUrl
-            ));
+    Mail::to($email)->queue(new RebrandingMail(
+        name:      $name,
+        emailTo:   $email,   // <- antes: email:
+        operation: $op,
+        surveyUrl: $surveyUrl
+    ));
 
-            // Registrar bitácora si existe tabla
-            if ($hasMailLogs) {
-                DB::table('mail_logs')->insert([
-                    'campaign'   => $campaign,
-                    'client_id'  => $r->client_id,
-                    'user_id'    => $r->user_id,
-                    'email'      => $email,
-                    'status'     => 'queued',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
+    if ($hasMailLogs) {
+        DB::table('mail_logs')->insert([
+            'campaign'   => $campaign,
+            'client_id'  => $r->client_id,
+            'user_id'    => $r->user_id,
+            'email'      => $email,
+            'status'     => 'queued',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+}
+
     }
 
     $this->info($dry ? "Listado: {$count}" : "Encolados: {$count}");
@@ -267,11 +266,12 @@ Artisan::command('rebranding:preview {client_id} {--test=}', function () {
     })($row->operation_desc);
 
     $mail = new RebrandingMail(
-        name: $row->contact_name ?: $row->client_name,
-        email: $row->email ?: 'sin-correo@local.test',
-        operation: $slug,
-        surveyUrl: config('rebranding.survey_url')
-    );
+    name: $row->contact_name ?: $row->client_name,
+    emailTo: $row->email ?: 'sin-correo@local.test', // <- antes decía email:
+    operation: $slug,
+    surveyUrl: config('rebranding.survey_url'),
+);
+
 
     if ($test) {
         \Illuminate\Support\Facades\Mail::to($test)->send($mail);
