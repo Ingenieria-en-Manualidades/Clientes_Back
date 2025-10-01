@@ -15,6 +15,8 @@ class PrivacyPolicyAcceptance extends Model
         'accepted_at' => 'datetime',
     ];
 
+    protected $table = 'surveys.privacy_policy_acceptances';
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
