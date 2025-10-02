@@ -34,9 +34,7 @@ function findClientWithOptionalUser(int $clientId): ?object {
                 'c.id',
                 'c.nombre',
                 DB::raw('u.email as user_email'),
-                // Algunas instalaciones usan cellphone, otras telefono: tomamos ambas
                 DB::raw('u.cellphone as user_cellphone'),
-                DB::raw('u.telefono as user_telefono'),
             ])
             ->first();
     }
@@ -51,7 +49,6 @@ function findClientWithOptionalUser(int $clientId): ?object {
                 'c.nombre',
                 DB::raw('u.email as user_email'),
                 DB::raw('u.cellphone as user_cellphone'),
-                DB::raw('u.telefono as user_telefono'),
             ])
             ->first();
     }
@@ -92,7 +89,6 @@ Artisan::command('rebranding:preview {client_id} {--test=} {--op=maquila} {--nam
     $surveyUrl = config('rebranding.survey_url');
 
     // Campos opcionales de contacto (no afectan el envío; van al footer del correo si existen)
-    $contactPhone = $row->user_cellphone ?? $row->user_telefono ?? null;
     $contactEmail = $row->user_email ?? null;
 
     // Envío inmediato (sin colas) para la prueba
