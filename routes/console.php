@@ -4,6 +4,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 use App\Mail\RebrandingMail;
 use App\Mail\SurveyNudgeMail;
@@ -17,13 +18,57 @@ Artisan::command('inspire', function () {
 
 
 /**
+ * Helper: trae el registro del cliente y (si existen tablas) el primer usuario relacionado
+ * para obtener teléfono/email de contacto desde users.
+ */
+function findClientWithOptionalUser(int $clientId): ?object {
+    // Base: clientes.id + clientes.nombre
+    $base = DB::table('clientes as c')->where('c.id', $clientId);
+
+    // Si existe 'cliente_user', preferimos esa
+    if (Schema::hasTable('cliente_user')) {
+        return $base
+            ->leftJoin('cliente_user as cu', 'cu.cliente_id', '=', 'c.id')
+            ->leftJoin('users as u', 'u.id', '=', 'cu.user_id')
+            ->select([
+                'c.id',
+                'c.nombre',
+                DB::raw('u.email as user_email'),
+                // Algunas instalaciones usan cellphone, otras telefono: tomamos ambas
+                DB::raw('u.cellphone as user_cellphone'),
+                DB::raw('u.telefono as user_telefono'),
+            ])
+            ->first();
+    }
+
+    // Si no, probamos 'user_clients'
+    if (Schema::hasTable('user_clients')) {
+        return $base
+            ->leftJoin('user_clients as uc', 'uc.client_id', '=', 'c.id')
+            ->leftJoin('users as u', 'u.id', '=', 'uc.user_id')
+            ->select([
+                'c.id',
+                'c.nombre',
+                DB::raw('u.email as user_email'),
+                DB::raw('u.cellphone as user_cellphone'),
+                DB::raw('u.telefono as user_telefono'),
+            ])
+            ->first();
+    }
+
+    // Si no hay pivote, solo devolvemos el cliente
+    return $base->select(['c.id', 'c.nombre'])->first();
+}
+
+
+/**
  * PREVIEW: Día 0 (lanzamiento) a un destinatario de prueba
  *
  * Uso:
  *  php artisan rebranding:preview {client_id} --test=correo@dominio --op=maquila --name="Nombre opcional"
  *
  *  - client_id  : id del cliente en la tabla `clientes`
- *  - --test     : correo destino (OBLIGATORIO para evitar enviar al cliente real)
+ *  - --test     : correo destino (OBLIGATORIO)
  *  - --op       : logistica|manufactura|maquila|aeropuertos|zona_franca|soluciones (default: maquila)
  *  - --name     : si quieres forzar el nombre mostrado (sino toma `clientes.nombre`)
  */
@@ -37,29 +82,26 @@ Artisan::command('rebranding:preview {client_id} {--test=} {--op=maquila} {--nam
         return self::FAILURE;
     }
 
-    // trae el nombre real del cliente
-    $row = DB::table('clientes as c')
-        ->where('c.id', $clientId)
-        ->select(['c.id', 'c.nombre', 'c.email', 'c.telefono'])
-        ->first();
-
+    $row = findClientWithOptionalUser($clientId);
     if (!$row) {
         $this->error("Cliente {$clientId} no encontrado.");
         return self::FAILURE;
     }
 
-    // nombre que se mostrará en el correo (si no pasas --name, usa `clientes.nombre`)
     $name = (string) ($this->option('name') ?: ($row->nombre ?? 'Cliente'));
-
     $surveyUrl = config('rebranding.survey_url');
+
+    // Campos opcionales de contacto (no afectan el envío; van al footer del correo si existen)
+    $contactPhone = $row->user_cellphone ?? $row->user_telefono ?? null;
+    $contactEmail = $row->user_email ?? null;
 
     // Envío inmediato (sin colas) para la prueba
     Mail::to($emailTo)->send(new RebrandingMail(
         name:         $name,
         operation:    $op,
         surveyUrl:    $surveyUrl,
-        contactPhone: $row->telefono,
-        contactEmail: $emailTo
+        contactPhone: $contactPhone,
+        contactEmail: $contactEmail
     ));
 
     $this->info("Preview enviado a {$emailTo} para client_id={$clientId} (op={$op}) con nombre=\"{$name}\"");
@@ -94,11 +136,7 @@ Artisan::command('survey:nudge:preview {wave} {client_id} {--test=} {--op=maquil
         return self::FAILURE;
     }
 
-    $row = DB::table('clientes as c')
-        ->where('c.id', $clientId)
-        ->select(['c.id', 'c.nombre', 'c.email', 'c.telefono'])
-        ->first();
-
+    $row = findClientWithOptionalUser($clientId);
     if (!$row) {
         $this->error("Cliente {$clientId} no encontrado.");
         return self::FAILURE;
