@@ -21,7 +21,7 @@ class RebrandingMail extends Mailable /* implements ShouldQueue */
 
     public function build()
     {
-        // Tu carpeta real:
+        // Carpeta real de imágenes (tú confirmaste que es "public/images/mail")
         $base = public_path('images/mail');
 
         $headerPath = $base . DIRECTORY_SEPARATOR . 'header.png';
@@ -35,9 +35,9 @@ class RebrandingMail extends Mailable /* implements ShouldQueue */
             'soluciones'   => 'IM SOLUCIONES.png',
         ];
 
-        $opKey       = strtolower($this->operation);
-        $opLogoFile  = $map[$opKey] ?? null;
-        $opLogoPath  = $opLogoFile ? $base . DIRECTORY_SEPARATOR . $opLogoFile : null;
+        $opKey      = strtolower($this->operation);
+        $opLogoFile = $map[$opKey] ?? null;
+        $opLogoPath = $opLogoFile ? $base . DIRECTORY_SEPARATOR . $opLogoFile : null;
 
         return $this->subject('Ayúdanos a mejorar juntos: Encuesta de satisfacción IM Ingeniería')
             ->view('emails.rebranding')
@@ -47,7 +47,6 @@ class RebrandingMail extends Mailable /* implements ShouldQueue */
                 'surveyUrl'    => $this->surveyUrl,
                 'contactPhone' => $this->contactPhone,
                 'contactEmail' => $this->contactEmail,
-                // rutas para embeber desde Blade
                 'headerPath'   => $headerPath,
                 'opLogoPath'   => $opLogoPath,
             ]);
