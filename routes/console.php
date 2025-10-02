@@ -18,43 +18,44 @@ Artisan::command('inspire', function () {
 
 
 /**
- * Helper: trae el registro del cliente y (si existen tablas) el primer usuario relacionado
- * para obtener teléfono/email de contacto desde users.
+ * Helper: trae el cliente por cliente_endpoint_id y, si existen tablas pivote,
+ * asocia el primer usuario para obtener su email (opcional).
  */
-function findClientWithOptionalUser(int $clientId): ?object {
-    // Base: clientes.id + clientes.nombre
-    $base = DB::table('clientes as c')->where('c.id', $clientId);
+function findClientByEndpointWithOptionalUser(int $endpointId): ?object {
+    $base = DB::table('clientes as c')
+        ->where('c.cliente_endpoint_id', $endpointId);
 
-    // Si existe 'cliente_user', preferimos esa
+    // Preferimos 'cliente_user' si existe
     if (Schema::hasTable('cliente_user')) {
         return $base
             ->leftJoin('cliente_user as cu', 'cu.cliente_id', '=', 'c.id')
             ->leftJoin('users as u', 'u.id', '=', 'cu.user_id')
             ->select([
-                'c.id',
+                'c.cliente_endpoint_id',
                 'c.nombre',
                 DB::raw('u.email as user_email'),
-                DB::raw('u.cellphone as user_cellphone'),
             ])
             ->first();
     }
 
-    // Si no, probamos 'user_clients'
+    // Alternativa: 'user_clients'
     if (Schema::hasTable('user_clients')) {
         return $base
             ->leftJoin('user_clients as uc', 'uc.client_id', '=', 'c.id')
             ->leftJoin('users as u', 'u.id', '=', 'uc.user_id')
             ->select([
-                'c.id',
+                'c.cliente_endpoint_id',
                 'c.nombre',
                 DB::raw('u.email as user_email'),
-                DB::raw('u.cellphone as user_cellphone'),
             ])
             ->first();
     }
 
-    // Si no hay pivote, solo devolvemos el cliente
-    return $base->select(['c.id', 'c.nombre'])->first();
+    // Sin pivote: solo datos del cliente
+    return $base->select([
+        'c.cliente_endpoint_id',
+        'c.nombre',
+    ])->first();
 }
 
 
@@ -62,45 +63,43 @@ function findClientWithOptionalUser(int $clientId): ?object {
  * PREVIEW: Día 0 (lanzamiento) a un destinatario de prueba
  *
  * Uso:
- *  php artisan rebranding:preview {client_id} --test=correo@dominio --op=maquila --name="Nombre opcional"
+ *  php artisan rebranding:preview {cliente_endpoint_id} --test=correo@dominio --op=maquila --name="Nombre opcional"
  *
- *  - client_id  : id del cliente en la tabla `clientes`
- *  - --test     : correo destino (OBLIGATORIO)
- *  - --op       : logistica|manufactura|maquila|aeropuertos|zona_franca|soluciones (default: maquila)
- *  - --name     : si quieres forzar el nombre mostrado (sino toma `clientes.nombre`)
+ *  - cliente_endpoint_id : valor en `clientes.cliente_endpoint_id`
+ *  - --test              : correo destino (OBLIGATORIO, evita envío real)
+ *  - --op                : logistica|manufactura|maquila|aeropuertos|zona_franca|soluciones (default: maquila)
+ *  - --name              : fuerza el nombre mostrado (si no, usa `clientes.nombre`)
  */
-Artisan::command('rebranding:preview {client_id} {--test=} {--op=maquila} {--name=}', function () {
-    $clientId = (int) $this->argument('client_id');
-    $emailTo  = (string) $this->option('test');     // OBLIGATORIO
-    $op       = (string) $this->option('op') ?: 'maquila';
+Artisan::command('rebranding:preview {cliente_endpoint_id} {--test=} {--op=maquila} {--name=}', function () {
+    $endpointId = (int) $this->argument('cliente_endpoint_id');
+    $emailTo    = (string) $this->option('test');     // OBLIGATORIO
+    $op         = (string) $this->option('op') ?: 'maquila';
 
     if (!$emailTo) {
         $this->error('--test es obligatorio (correo de prueba).');
         return self::FAILURE;
     }
 
-    $row = findClientWithOptionalUser($clientId);
+    $row = findClientByEndpointWithOptionalUser($endpointId);
     if (!$row) {
-        $this->error("Cliente {$clientId} no encontrado.");
+        $this->error("Cliente con cliente_endpoint_id={$endpointId} no encontrado.");
         return self::FAILURE;
     }
 
-    $name = (string) ($this->option('name') ?: ($row->nombre ?? 'Cliente'));
-    $surveyUrl = config('rebranding.survey_url');
-
-    // Campos opcionales de contacto (no afectan el envío; van al footer del correo si existen)
-    $contactEmail = $row->user_email ?? null;
+    $name       = (string) ($this->option('name') ?: ($row->nombre ?? 'Cliente'));
+    $surveyUrl  = config('rebranding.survey_url');
+    $contactEmail = $row->user_email ?? null; // opcional, solo para el footer si lo usas
 
     // Envío inmediato (sin colas) para la prueba
     Mail::to($emailTo)->send(new RebrandingMail(
         name:         $name,
         operation:    $op,
         surveyUrl:    $surveyUrl,
-        contactPhone: $contactPhone,
+        // sin teléfono:
         contactEmail: $contactEmail
     ));
 
-    $this->info("Preview enviado a {$emailTo} para client_id={$clientId} (op={$op}) con nombre=\"{$name}\"");
+    $this->info("Preview enviado a {$emailTo} para cliente_endpoint_id={$endpointId} (op={$op}) con nombre=\"{$name}\"");
     return self::SUCCESS;
 })->purpose('Enviar PREVIEW del Día 0 a un correo de prueba');
 
@@ -109,19 +108,19 @@ Artisan::command('rebranding:preview {client_id} {--test=} {--op=maquila} {--nam
  * PREVIEW: Recordatorios (waves) a un destinatario de prueba
  *
  * Uso:
- *  php artisan survey:nudge:preview {wave} {client_id} --test=correo@dominio --op=maquila --name="Nombre opcional"
+ *  php artisan survey:nudge:preview {wave} {cliente_endpoint_id} --test=correo@dominio --op=maquila --name="Nombre opcional"
  *
- *  - wave       : day3|day7|thanks|day14|nov|dec_mid
- *  - client_id  : id del cliente en `clientes`
- *  - --test     : correo destino (OBLIGATORIO)
- *  - --op       : logistica|manufactura|maquila|aeropuertos|zona_franca|soluciones (default: maquila)
- *  - --name     : fuerza el nombre mostrado (si no, usa `clientes.nombre`)
+ *  - wave                : day3|day7|thanks|day14|nov|dec_mid
+ *  - cliente_endpoint_id : valor en `clientes.cliente_endpoint_id`
+ *  - --test              : correo destino (OBLIGATORIO)
+ *  - --op                : logistica|manufactura|maquila|aeropuertos|zona_franca|soluciones (default: maquila)
+ *  - --name              : fuerza el nombre mostrado (si no, usa `clientes.nombre`)
  */
-Artisan::command('survey:nudge:preview {wave} {client_id} {--test=} {--op=maquila} {--name=}', function () {
-    $wave     = strtolower((string) $this->argument('wave'));
-    $clientId = (int) $this->argument('client_id');
-    $emailTo  = (string) $this->option('test');
-    $op       = (string) $this->option('op') ?: 'maquila';
+Artisan::command('survey:nudge:preview {wave} {cliente_endpoint_id} {--test=} {--op=maquila} {--name=}', function () {
+    $wave       = strtolower((string) $this->argument('wave'));
+    $endpointId = (int) $this->argument('cliente_endpoint_id');
+    $emailTo    = (string) $this->option('test');
+    $op         = (string) $this->option('op') ?: 'maquila';
 
     if (!in_array($wave, ['day3','day7','thanks','day14','nov','dec_mid'], true)) {
         $this->error("Wave inválida: {$wave}");
@@ -132,13 +131,13 @@ Artisan::command('survey:nudge:preview {wave} {client_id} {--test=} {--op=maquil
         return self::FAILURE;
     }
 
-    $row = findClientWithOptionalUser($clientId);
+    $row = findClientByEndpointWithOptionalUser($endpointId);
     if (!$row) {
-        $this->error("Cliente {$clientId} no encontrado.");
+        $this->error("Cliente con cliente_endpoint_id={$endpointId} no encontrado.");
         return self::FAILURE;
     }
 
-    $name = (string) ($this->option('name') ?: ($row->nombre ?? 'Cliente'));
+    $name      = (string) ($this->option('name') ?: ($row->nombre ?? 'Cliente'));
     $surveyUrl = config('rebranding.survey_url');
 
     Mail::to($emailTo)->send(new SurveyNudgeMail(
@@ -148,6 +147,6 @@ Artisan::command('survey:nudge:preview {wave} {client_id} {--test=} {--op=maquil
         wave:      $wave
     ));
 
-    $this->info("Preview wave={$wave} enviado a {$emailTo} (client_id={$clientId}, op={$op}, nombre=\"{$name}\")");
+    $this->info("Preview wave={$wave} enviado a {$emailTo} (cliente_endpoint_id={$endpointId}, op={$op}, nombre=\"{$name}\")");
     return self::SUCCESS;
 })->purpose('Enviar PREVIEW de recordatorios a un correo de prueba');
