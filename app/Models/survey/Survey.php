@@ -21,6 +21,7 @@ class Survey extends Model
         'charge_id',
         'clients_id',
         'username',
+        'another_charge',
         'active',
     ];
 

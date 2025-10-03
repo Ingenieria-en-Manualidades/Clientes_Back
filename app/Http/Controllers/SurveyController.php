@@ -25,7 +25,7 @@ class SurveyController extends Controller
     public function getListCharges()
     {
         try {
-            $charges = Charge::all();
+            $charges = Charge::orderBy('description', 'asc')->get();
             return response()->json(['data' => $charges], 200);
         } catch (\Exception $e) {
             return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo con el servidor.', 'error' => $e->getMessage()], 500);
@@ -55,6 +55,7 @@ class SurveyController extends Controller
                 'charge_id' => 'required|integer',
                 'clients_id' => 'required|integer',
                 'username' => 'required|string',
+                'another_charge' => 'nullable|string',
                 'answers' => 'required|array',
             ]);
 
@@ -70,6 +71,7 @@ class SurveyController extends Controller
             $survey->charge_id = $validatedData['charge_id'];
             $survey->clients_id = $validatedData['clients_id'];
             $survey->username = $validatedData['username'];
+            $survey->another_charge = $validatedData['another_charge'] ?? null;
             $survey->save();
 
             foreach ($validatedData['answers'] as $answer) {
