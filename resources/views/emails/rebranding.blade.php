@@ -128,12 +128,7 @@ $opPublicFile = $opMap[$op] ?? null;
 
           <tr>
             <td align="center" style="padding:18px;background:#f5f7fb;border-top:1px solid #edf0f6;">
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#6b7280;">
-                <strong>IM Ingeniería</strong><br />
-                @if(!empty($contactPhone) || !empty($contactEmail))
-                {{ $contactPhone ?? '' }}{{ (!empty($contactPhone) && !empty($contactEmail)) ? ' | ' : '' }}{{ $contactEmail ?? '' }}
-                @endif
-              </p>
+              <img src="{{ $publicBase }}/Firma-Correo-Outlook.png" alt="IM Ingeniería" class="header-img" style="display:block;width:600px;max-width:100%;height:auto;">
             </td>
           </tr>
 
