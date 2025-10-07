@@ -1,45 +1,64 @@
 @php
-  $safeName   = $name ?? 'Cliente';
-  $op         = strtolower($operation ?? '');
-  $publicBase = asset('images/mail');
+$safeName = $name ?? 'Cliente';
+$op = strtolower($operation ?? '');
+$publicBase = asset('images/mail');
 
-  $opMessage = match ($op) {
-    'logistica'   => 'Como parte de nuestra historia compartida, ahora tu relación con nosotros se vivirá bajo el nombre IM Logística. Un nombre que refleja lo que ya hemos construido juntos en este camino.',
-    'manufactura' => 'Tú ya eres parte de IM Manufactura, y con este nombre reafirmamos la identidad de lo que hemos venido logrando juntos en cada proyecto.',
-    'maquila'     => 'Con nosotros formas parte de IM Maquila, un espacio que evoluciona en imagen, pero mantiene intacto lo que hemos construido contigo.',
-    'aeropuertos' => 'Tu confianza nos ha permitido crecer, y ahora esa relación se fortalece bajo el nombre IM Aeropuertos, la misma esencia, un nombre más claro.',
-    'zona_franca' => 'Contigo caminamos como IM Zona Franca, un sello que evoluciona en imagen, pero que sigue siendo el mismo equipo a tu lado.',
-    'soluciones'  => 'Desde ahora eres parte de IM Soluciones, un reflejo más fiel de lo que hemos trabajado juntos y seguiremos construyendo.',
-    default       => null,
-  };
+$opMessage = match ($op) {
+'logistica' => 'Como parte de nuestra historia compartida, ahora tu relación con nosotros se vivirá bajo el nombre IM Logística. Un nombre que refleja lo que ya hemos construido juntos en este camino.',
+'manufactura' => 'Tú ya eres parte de IM Manufactura, y con este nombre reafirmamos la identidad de lo que hemos venido logrando juntos en cada proyecto.',
+'maquila' => 'Con nosotros formas parte de IM Maquila, un espacio que evoluciona en imagen, pero mantiene intacto lo que hemos construido contigo.',
+'aeropuertos' => 'Tu confianza nos ha permitido crecer, y ahora esa relación se fortalece bajo el nombre IM Aeropuertos, la misma esencia, un nombre más claro.',
+'zona_franca' => 'Contigo caminamos como IM Zona Franca, un sello que evoluciona en imagen, pero que sigue siendo el mismo equipo a tu lado.',
+'soluciones' => 'Desde ahora eres parte de IM Soluciones, un reflejo más fiel de lo que hemos trabajado juntos y seguiremos construyendo.',
+default => null,
+};
 
-  $opMap = [
-    'logistica'   => 'IM LOGISTICA.png',
-    'manufactura' => 'IM MANUFACTURA.png',
-    'maquila'     => 'IM MAQUILA.png',
-    'aeropuertos' => 'IM AEROPUERTOS.png',
-    'zona_franca' => 'IM ZONA FRANCA.png',
-    'soluciones'  => 'IM SOLUCIONES.png',
-  ];
-  $opPublicFile = $opMap[$op] ?? null;
+$opMap = [
+'logistica' => 'IM LOGISTICA.png',
+'manufactura' => 'IM MANUFACTURA.png',
+'maquila' => 'IM MAQUILA.png',
+'aeropuertos' => 'IM AEROPUERTOS.png',
+'zona_franca' => 'IM ZONA FRANCA.png',
+'soluciones' => 'IM SOLUCIONES.png',
+];
+$opPublicFile = $opMap[$op] ?? null;
 @endphp
 
 <!doctype html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8" />
   <meta name="x-apple-disable-message-reformatting">
   <title>IM Ingeniería – Encuesta de satisfacción</title>
   <style>
-    .btn:hover { opacity:.9 !important; }
+    .btn:hover {
+      opacity: .9 !important;
+    }
+
     @media (max-width: 620px) {
-      .container { width: 100% !important; }
-      .px { padding-left:16px !important; padding-right:16px !important; }
-      .header-img { width: 100% !important; height: auto !important; }
-      .op-logo { width: 180px !important; height: auto !important; }
+      .container {
+        width: 100% !important;
+      }
+
+      .px {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+      }
+
+      .header-img {
+        width: 100% !important;
+        height: auto !important;
+      }
+
+      .op-logo {
+        width: 180px !important;
+        height: auto !important;
+      }
     }
   </style>
 </head>
+
 <body style="margin:0;padding:0;background:#f6f7fb;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Ayúdanos a mejorar juntos: Encuesta de satisfacción IM Ingeniería</div>
 
@@ -50,9 +69,9 @@
           <tr>
             <td>
               @if(!empty($headerPath) && is_file($headerPath))
-                <img src="{{ $message->embed($headerPath) }}" alt="IM Ingeniería" class="header-img" style="display:block;width:600px;max-width:100%;height:auto;">
+              <img src="{{ $message->embed($headerPath) }}" alt="IM Ingeniería" class="header-img" style="display:block;width:600px;max-width:100%;height:auto;">
               @else
-                <img src="{{ $publicBase }}/header.png" alt="IM Ingeniería" class="header-img" style="display:block;width:600px;max-width:100%;height:auto;">
+              <img src="{{ $publicBase }}/header.png" alt="IM Ingeniería" class="header-img" style="display:block;width:600px;max-width:100%;height:auto;">
               @endif
             </td>
           </tr>
@@ -75,23 +94,13 @@
                 En IM llevamos más de 38 años caminando junto a nuestros clientes y equipos de trabajo, creciendo, aprendiendo y transformándonos con ellos. Hoy queremos compartir contigo una evolución importante: dejamos atrás el nombre <em>Ingeniería en Manualidades y Logística</em> para convertirnos en <strong>IM Ingeniería</strong>. Es una marca más cercana, moderna y coherente con lo que somos hoy, pero con la misma esencia de siempre.
               </p>
 
+
               @if($opMessage)
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:16px 0;background:#f3f7ff;border-radius:8px;">
-                <tr>
-                  <td style="padding:14px;">
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                      <tr>
-                        <td valign="top" style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#2b2b2b;">
-                          @if($opMessage)
-                            <p style="margin:0;">{{ $opMessage }}</p>
-                          @endif
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
+              <p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#2b2b2b;">
+                {{ $opMessage }}
+              </p>
               @endif
+
 
               <p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#2b2b2b;">
                 <strong>Lo que cambia:</strong> nuestro logo y nuestra forma de presentarnos.<br>
@@ -104,7 +113,7 @@
 
               <p style="margin:0 0 24px;">
                 <a href="{{ $surveyUrl }}" target="_blank" rel="noopener"
-                   style="display:inline-block;background:#2f80ed;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;">
+                  style="display:inline-block;background:#2f80ed;color:#111827;text-decoration:none;padding:12px 20px;border-radius:8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;">
                   Responder encuesta
                 </a>
               </p>
@@ -118,9 +127,9 @@
           <tr>
             <td align="center" style="padding:18px;background:#f5f7fb;border-top:1px solid #edf0f6;">
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#6b7280;">
-                <strong>IM Ingeniería</strong><br/>
+                <strong>IM Ingeniería</strong><br />
                 @if(!empty($contactPhone) || !empty($contactEmail))
-                  {{ $contactPhone ?? '' }}{{ (!empty($contactPhone) && !empty($contactEmail)) ? ' | ' : '' }}{{ $contactEmail ?? '' }}
+                {{ $contactPhone ?? '' }}{{ (!empty($contactPhone) && !empty($contactEmail)) ? ' | ' : '' }}{{ $contactEmail ?? '' }}
                 @endif
               </p>
             </td>
@@ -131,4 +140,5 @@
     </tr>
   </table>
 </body>
+
 </html>
