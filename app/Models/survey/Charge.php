@@ -24,4 +24,9 @@ class Charge extends Model
     {
         return $this->hasMany(Survey::class, 'charge_id', 'charge_id');
     }
+
+    public function customer_contact()
+    {
+        return $this->hasMany(CustomerContact::class, 'charge_id', 'charge_id');
+    }
 }

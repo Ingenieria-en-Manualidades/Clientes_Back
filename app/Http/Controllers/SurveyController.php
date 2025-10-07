@@ -11,6 +11,7 @@ use App\Models\survey\InputRadioAnswer;
 use App\Models\survey\SurveyHasQuestion;
 use App\Models\survey\Charge;
 use App\Models\survey\Clients;
+use App\Models\survey\CustomerContact;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -127,12 +128,44 @@ class SurveyController extends Controller
 
     public function getInformationUser($username) {
         try {
-            $user = DB::table('users')->select('users.email', 'users.cellphone')->where('users.name', $username)->whereNull('users.deleted_at')->first();
+            $user = DB::table('users')->where('users.name', $username)->whereNull('users.deleted_at')->first();
             if (!$user) {
                 return response()->json(['title' => 'Error de usuario.','message' => 'Usuario no encontrado.'], 404);
             }
 
-            return response()->json(['data' => $user], 200);
+            $customerContact = CustomerContact::where('user_id', $user->id)->first();
+            if (!$customerContact) {
+                return response()->json(['title' => 'Error del contacto.','message' => 'Contacto del cliente no encontrado.'], 404);
+            }
+
+            $today = new DateTime();
+            $existingSurvey = Survey::where('start_time','like', $today->format('Y') .'%')->where('user_id', $user->id)->first();
+
+            if ($existingSurvey) {
+                $questionsAnsweredByUser = SurveyHasQuestion::where('survey_id', $existingSurvey->survey_id)->get();
+                // $questionIds = $questionsAnsweredByUser->pluck('survey_has_question_id');
+
+                $answersSimples = SimpleAnswer::select('simple_answer_id', 'description', 'shq.question_id')
+                ->join('survey_has_question as shq', 'shq.survey_has_question_id', '=', 'simple_answer.survey_has_question_id')
+                ->whereIn('simple_answer.survey_has_question_id', $questionsAnsweredByUser->pluck('survey_has_question_id'))->get();
+
+                $answersBooleans = BooleanAnswer::select('boolean_answer_id', 'answer', 'observation', 'shq.question_id')
+                ->join('survey_has_question as shq', 'shq.survey_has_question_id', '=', 'boolean_answer.survey_has_question_id')
+                ->whereIn('boolean_answer.survey_has_question_id', $questionsAnsweredByUser->pluck('survey_has_question_id'))->get();
+
+                $answersInputRadio = InputRadioAnswer::select('input_radio_answer_id', 'value_option', 'observation', 'shq.question_id')
+                ->join('survey_has_question as shq', 'shq.survey_has_question_id', '=', 'input_radio_answer.survey_has_question_id')
+                ->whereIn('input_radio_answer.survey_has_question_id', $questionsAnsweredByUser->pluck('survey_has_question_id'))->get();
+
+                $surveyComplete = (object) [
+                    'survey' => $existingSurvey,
+                    'answersSimples' => $answersSimples,
+                    'answersBooleans' => $answersBooleans,
+                    'answersInputRadio' => $answersInputRadio,
+                ];
+            }
+
+            return response()->json(['customer' => $customerContact, 'survey' => $surveyComplete ?? null], 200);
         } catch (\Exception $e) {
             return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo con el servidor.', 'error' => $e->getMessage()], 500);
         }

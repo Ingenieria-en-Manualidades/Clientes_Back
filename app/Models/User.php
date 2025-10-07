@@ -105,4 +105,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Survey::class, 'user_id', 'id');
     }
+
+    public function customer_contact()
+    {
+        return $this->hasMany(CustomerContact::class, 'user_id', 'id');
+    }
 }
