@@ -23,10 +23,11 @@ Artisan::command('inspire', function () {
  */
 function findContactByEndpoint(int $endpointId): ?object {
     return DB::table('clientes as c')
-        ->join('surveys.customer_contact as cc', 'cc.client_id', '=', 'c.id')
+        ->join('cliente_user as cu', 'cu.cliente_id', '=', 'c.id')
+        ->join('surveys.customer_contact as cc', 'cc.user_id', '=', 'cu.id')
         ->where('c.cliente_endpoint_id', $endpointId)
-        ->whereNotNull('cc.email')               // preferimos contactos con email
-        ->orderByDesc('cc.id')                   // último creado/actualizado
+        ->whereNotNull('cc.email')               
+        ->orderByDesc('cc.id')                   
         ->select([
             'c.id as client_id',
             'c.cliente_endpoint_id',
