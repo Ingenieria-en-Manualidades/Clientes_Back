@@ -65,6 +65,7 @@ class CampaignService
             ->select([
                 'c.id            as client_id',
                 'u.id            as user_id',
+                'u.name as username',
                 'c.nombre        as client_name',
                 'cc.fullname     as contact_name',
                 'cc.email        as contact_email',
@@ -104,6 +105,8 @@ class CampaignService
 
             $name = $r->contact_name ?: $r->client_name ?: 'Cliente';
             $op   = $this->opToSlug($r->operation_desc ?? null);
+            $username = $r->username ?? null;
+            $tmpPass  = 'Temporal01';
 
             if (!$dry) {
                 Mail::to($email)->queue(new RebrandingMail(
@@ -111,6 +114,8 @@ class CampaignService
                     operation:    $op,
                     surveyUrl:    $surveyUrl,
                     contactPhone: $r->contact_phone,
+                    username:     $username,
+                    tempPassword: $tmpPass,
                     contactEmail: $email
                 ));
 

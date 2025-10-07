@@ -21,7 +21,7 @@ class SurveyNudgeMail extends Mailable /* implements ShouldQueue */
     public function build()
     {
         $base = public_path('images/mail');
-        $headerPath = $base . DIRECTORY_SEPARATOR . 'header.png';
+        $headerPath = $base . DIRECTORY_SEPARATOR . 'header22.png';
 
         $map = [
             'logistica'   => 'IM LOGISTICA.png',

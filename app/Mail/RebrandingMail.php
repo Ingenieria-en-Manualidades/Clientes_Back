@@ -17,6 +17,8 @@ class RebrandingMail extends Mailable /* implements ShouldQueue */
         public string $surveyUrl,
         public ?string $contactPhone = null,
         public ?string $contactEmail = null,
+        public ?string $username = null,    
+  public ?string $tempPassword = null
     ) {}
 
     public function build()

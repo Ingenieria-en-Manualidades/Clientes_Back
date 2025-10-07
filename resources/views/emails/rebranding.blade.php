@@ -111,6 +111,10 @@ $opPublicFile = $opMap[$op] ?? null;
                 Queremos seguir mejorando juntos. Por eso, te invitamos a responder nuestra <strong>encuesta de satisfacción</strong>:
               </p>
 
+              <p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#2b2b2b;">
+                <strong>Usuario</strong>: {{$userName}}<br><strong>Contraseña</strong>: {{$tempPassword ?? 'Temporal01'}}
+              </p>
+
               <p style="margin:0 0 24px;">
                 <a href="{{ $surveyUrl }}" target="_blank" rel="noopener"
                      style="display:inline-block;background:#FACC15;color:#111827;text-decoration:none;
