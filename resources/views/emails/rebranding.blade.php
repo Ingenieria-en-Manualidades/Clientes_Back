@@ -112,7 +112,7 @@ $opPublicFile = $opMap[$op] ?? null;
               </p>
 
               <p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#2b2b2b;">
-                <strong>Usuario</strong>: {{$userName}}<br><strong>Contraseña</strong>: {{$tempPassword ?? 'Temporal01'}}
+                <strong>Usuario</strong>: {{$username}}<br><strong>Contraseña</strong>: {{$tempPassword ?? 'Temporal01'}}
               </p>
 
               <p style="margin:0 0 24px;">
