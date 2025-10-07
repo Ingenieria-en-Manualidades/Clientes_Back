@@ -29,10 +29,10 @@ class RebrandingMail extends Mailable /* implements ShouldQueue */
         $headerPath = $base . DIRECTORY_SEPARATOR . 'header.png';
 
         $map = [
-            'logistica'    => 'IM LOGISTICA.png',
-            'manufactura'  => 'IM MANUFACTURA.png',
-            'maquila'      => 'IM MAQUILA.png',
-            'aeropuertos'  => 'IM AEROPUERTOS.png',
+            'Logistica'    => 'IM LOGISTICA.png',
+            'Manufactura'  => 'IM MANUFACTURA.png',
+            'Maquila'      => 'IM MAQUILA.png',
+            'Aeropuertos'  => 'IM AEROPUERTOS.png',
             'zona_franca'  => 'IM ZONA FRANCA.png',
             'soluciones'   => 'IM SOLUCIONES.png',
         ];

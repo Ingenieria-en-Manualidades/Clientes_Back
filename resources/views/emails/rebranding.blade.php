@@ -4,10 +4,10 @@ $op = strtolower($operation ?? '');
 $publicBase = asset('images/mail');
 
 $opMessage = match ($op) {
-'logistica' => 'Como parte de nuestra historia compartida, ahora tu relación con nosotros se vivirá bajo el nombre IM Logística. Un nombre que refleja lo que ya hemos construido juntos en este camino.',
-'manufactura' => 'Tú ya eres parte de IM Manufactura, y con este nombre reafirmamos la identidad de lo que hemos venido logrando juntos en cada proyecto.',
-'maquila' => 'Con nosotros formas parte de IM Maquila, un espacio que evoluciona en imagen, pero mantiene intacto lo que hemos construido contigo.',
-'aeropuertos' => 'Tu confianza nos ha permitido crecer, y ahora esa relación se fortalece bajo el nombre IM Aeropuertos, la misma esencia, un nombre más claro.',
+'Logistica' => 'Como parte de nuestra historia compartida, ahora tu relación con nosotros se vivirá bajo el nombre IM Logística. Un nombre que refleja lo que ya hemos construido juntos en este camino.',
+'Manufactura' => 'Tú ya eres parte de IM Manufactura, y con este nombre reafirmamos la identidad de lo que hemos venido logrando juntos en cada proyecto.',
+'Maquila' => 'Con nosotros formas parte de IM Maquila, un espacio que evoluciona en imagen, pero mantiene intacto lo que hemos construido contigo.',
+'Aeropuertos' => 'Tu confianza nos ha permitido crecer, y ahora esa relación se fortalece bajo el nombre IM Aeropuertos, la misma esencia, un nombre más claro.',
 'zona_franca' => 'Contigo caminamos como IM Zona Franca, un sello que evoluciona en imagen, pero que sigue siendo el mismo equipo a tu lado.',
 'soluciones' => 'Desde ahora eres parte de IM Soluciones, un reflejo más fiel de lo que hemos trabajado juntos y seguiremos construyendo.',
 default => null,
