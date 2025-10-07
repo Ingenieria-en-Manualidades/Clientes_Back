@@ -27,7 +27,7 @@ function findContactByEndpoint(int $endpointId): ?object {
         ->join('surveys.customer_contact as cc', 'cc.user_id', '=', 'cu.id')
         ->where('c.cliente_endpoint_id', $endpointId)
         ->whereNotNull('cc.email')               
-        ->orderByDesc('cc.id')                   
+        ->orderByDesc('cc.customer_contact_id')                   
         ->select([
             'c.id as client_id',
             'c.cliente_endpoint_id',
