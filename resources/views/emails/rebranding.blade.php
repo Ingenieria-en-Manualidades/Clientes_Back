@@ -113,9 +113,11 @@ $opPublicFile = $opMap[$op] ?? null;
 
               <p style="margin:0 0 24px;">
                 <a href="{{ $surveyUrl }}" target="_blank" rel="noopener"
-                  style="display:inline-block;background:#2f80ed;color:#111827;text-decoration:none;padding:12px 20px;border-radius:8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;">
-                  Responder encuesta
-                </a>
+                     style="display:inline-block;background:#FACC15;color:#111827;text-decoration:none;
+                            padding:12px 20px;border-radius:8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;
+                            border:1px solid #EAB308;">
+                    Responder encuesta
+                  </a>
               </p>
 
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#2b2b2b;">

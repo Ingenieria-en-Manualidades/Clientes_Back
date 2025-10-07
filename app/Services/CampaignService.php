@@ -12,6 +12,9 @@ use Illuminate\Support\Str;
 
 class CampaignService
 {
+    /* ------------------------------------------
+     * Helpers
+     * ----------------------------------------*/
     public function opToSlug(?string $txt): string
     {
         $t = Str::of((string)$txt)->lower()->squish()->toString();
@@ -31,34 +34,61 @@ class CampaignService
 
     public function hasResponded(string $email): bool
     {
-        // TODO: Ajusta a tu tabla real de respuestas si aplica.
+        // Ajusta si tienes tabla real de respuestas:
         // return DB::table('surveys.survey_responses')->where('email', $email)->exists();
         return false;
     }
 
-    /** Día 0: envío de rebranding */
+    /**
+     * Base: contactos RELACIONADOS al cliente por cliente_user -> users -> surveys.customer_contact
+     * - Un contacto por user (el último por customer_contact_id)
+     * - Sólo con email
+     */
+    protected function relatedContactsQuery()
+    {
+        // subconsulta: último contact por user_id (si hay múltiples filas en cc)
+        $latestCc = DB::table('surveys.customer_contact as cc1')
+            ->select('cc1.user_id', DB::raw('MAX(cc1.customer_contact_id) as last_cc_id'))
+            ->groupBy('cc1.user_id');
+
+        return DB::table('clientes as c')
+            ->join('cliente_user as cu', 'cu.cliente_id', '=', 'c.id')
+            ->join('users as u', 'u.id', '=', 'cu.user_id')
+            ->joinSub($latestCc, 'last_cc', function ($j) {
+                $j->on('last_cc.user_id', '=', 'u.id');
+            })
+            ->join('surveys.customer_contact as cc', function ($j) {
+                $j->on('cc.user_id', '=', 'u.id')
+                  ->on('cc.customer_contact_id', '=', 'last_cc.last_cc_id');
+            })
+            ->whereNotNull('cc.email')
+            ->select([
+                'c.id            as client_id',
+                'u.id            as user_id',
+                'c.nombre        as client_name',
+                'cc.fullname     as contact_name',
+                'cc.email        as contact_email',
+                'cc.cellphone    as contact_phone',
+                // Si tienes un campo en clientes que describa operación, cámbialo aquí:
+                DB::raw("'maquila' as operation_desc"),
+            ]);
+    }
+
+    /* ------------------------------------------
+     * Día 0: Rebranding (MASIVO sólo relacionados)
+     * ----------------------------------------*/
     public function sendRebranding(string $campaign, int $limit = 0, bool $dry = false): array
     {
         $hasMailLogs = Schema::hasTable('mail_logs');
 
-        $q = DB::table('clientes as c')
-            ->select([
-                'c.id as client_id',
-                DB::raw('NULL::int as user_id'),
-                'c.nombre as client_name',
-                'c.nombre as contact_name',
-                'c.email as email',
-                DB::raw("'maquila' as operation_desc"),
-                'c.telefono as phone',
-            ])
-            ->whereNotNull('c.email');
+        $q = $this->relatedContactsQuery();
 
         if ($hasMailLogs) {
             $q->whereNotExists(function ($s) use ($campaign) {
                 $s->select(DB::raw(1))
-                  ->from('mail_logs as ml')
-                  ->whereColumn('ml.email', 'c.email')
-                  ->where('ml.campaign', $campaign);
+                    ->from('mail_logs as ml')
+                    ->whereColumn('ml.email', 'cc.email')
+                    ->where('ml.campaign', $campaign);
             });
         }
 
@@ -69,7 +99,7 @@ class CampaignService
         $sent = 0;
 
         foreach ($rows as $r) {
-            $email = $r->email;
+            $email = $r->contact_email;
             if (!$email) continue;
 
             $name = $r->contact_name ?: $r->client_name ?: 'Cliente';
@@ -77,10 +107,10 @@ class CampaignService
 
             if (!$dry) {
                 Mail::to($email)->queue(new RebrandingMail(
-                    name: $name,
-                    operation: $op,
-                    surveyUrl: $surveyUrl,
-                    contactPhone: $r->phone,
+                    name:         $name,
+                    operation:    $op,
+                    surveyUrl:    $surveyUrl,
+                    contactPhone: $r->contact_phone,
                     contactEmail: $email
                 ));
 
@@ -103,20 +133,25 @@ class CampaignService
         return ['sent' => $sent, 'total' => count($rows)];
     }
 
-    /** Nudges (día 3/7/10, nov, dec_mid, day14) */
+    /* ------------------------------------------
+     * Recordatorios (waves)
+     * ----------------------------------------*/
     public function sendNudge(string $wave, string $campaign, int $limit = 0, bool $dry = false, ?string $forceOp = null): array
     {
         $hasMailLogs  = Schema::hasTable('mail_logs');
         $waveCampaign = "{$campaign}:{$wave}";
 
+        // Usamos mail_logs previos (día 0) como base,
+        // y volvemos a resolver nombre desde customer_contact (por email).
         $q = DB::table('mail_logs as ml')
-            ->join('clientes as c', 'c.email', '=', 'ml.email')
+            ->join('surveys.customer_contact as cc', 'cc.email', '=', 'ml.email')
+            ->leftJoin('cliente_user as cu', 'cu.user_id', '=', 'cc.user_id')
+            ->leftJoin('clientes as c', 'c.id', '=', 'cu.cliente_id')
             ->select([
-                'c.id as client_id',
-                DB::raw('NULL::int as user_id'),
-                'c.nombre as client_name',
-                'c.nombre as contact_name',
-                'c.email as email',
+                'c.id             as client_id',
+                'cc.user_id       as user_id',
+                'cc.fullname      as contact_name',
+                'cc.email         as email',
                 DB::raw("'maquila' as operation_desc"),
             ])
             ->where('ml.campaign', $campaign);
@@ -144,7 +179,7 @@ class CampaignService
 
         foreach ($rows as $r) {
             $email = $r->email; if (!$email) { $skipped++; continue; }
-            $name  = $r->contact_name ?: $r->client_name ?: 'Cliente';
+            $name  = $r->contact_name ?: 'Cliente';
             $op    = $forceOp ?: $this->opToSlug($r->operation_desc ?? null);
 
             $responded = $this->hasResponded($email);
@@ -153,10 +188,10 @@ class CampaignService
 
             if (!$dry) {
                 Mail::to($email)->queue(new SurveyNudgeMail(
-                    name: $name,
+                    name:      $name,
                     operation: $op,
                     surveyUrl: $surveyUrl,
-                    wave: $wave
+                    wave:      $wave
                 ));
                 if ($hasMailLogs) {
                     DB::table('mail_logs')->insert([
@@ -177,7 +212,9 @@ class CampaignService
         return ['sent' => $sent, 'skipped' => $skipped, 'total' => count($rows)];
     }
 
-    /** CSV WhatsApp (Noviembre) */
+    /* ------------------------------------------
+     * Exports (sin cambios funcionales relevantes)
+     * ----------------------------------------*/
     public function exportWaNov(int $limit = 0, bool $dry = false): ?string
     {
         $q = DB::table('clientes as c')
@@ -206,7 +243,6 @@ class CampaignService
         return storage_path('app/'.$file);
     }
 
-    /** CSV WhatsApp (Inicio Diciembre) */
     public function exportWaDecStart(int $limit = 0, bool $dry = false): ?string
     {
         $q = DB::table('clientes as c')
@@ -235,7 +271,6 @@ class CampaignService
         return storage_path('app/'.$file);
     }
 
-    /** CSV Llamadas (Mitad Diciembre) */
     public function exportCallsDecMid(int $limit = 0, bool $dry = false): ?string
     {
         $q = DB::table('clientes as c')
