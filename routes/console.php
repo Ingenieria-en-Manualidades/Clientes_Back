@@ -155,3 +155,44 @@ Artisan::command('survey:nudge:preview {wave} {cliente_endpoint_id} {--test=} {-
     $this->info("Preview wave={$wave} enviado a {$emailTo} (endpoint={$endpointId}, op={$operation}, nombre=\"{$name}\")");
     return self::SUCCESS;
 })->purpose('Enviar PREVIEW de recordatorios a un correo de prueba');
+
+
+
+use App\Services\CampaignService;
+
+/**
+ * ENVÍO MASIVO – Día 0 (rebranding)
+ * Uso: php artisan rebranding:send {campaign} {--limit=0} {--dry}
+ * Ej.: php artisan rebranding:send 2025D0 --limit=200
+ */
+Artisan::command('rebranding:send {campaign} {--limit=0} {--dry}', function (CampaignService $svc) {
+    $campaign = (string)$this->argument('campaign');
+    $limit    = (int)$this->option('limit');
+    $dry      = (bool)$this->option('dry');
+
+    $res = $svc->sendRebranding($campaign, $limit, $dry);
+    $this->info("Rebranding " . ($dry ? '(dry-run) ' : '') . "→ sent={$res['sent']} / total={$res['total']}");
+})->purpose('Enviar masivo Día 0 a contactos relacionados');
+
+
+/**
+ * ENVÍO MASIVO – Recordatorios (waves)
+ * Uso: php artisan survey:nudge:send {wave} {campaign} {--limit=0} {--dry} {--op=}
+ * wave: day3|day7|thanks|day14|nov|dec_mid
+ * Ej.: php artisan survey:nudge:send day3 2025D0 --limit=500
+ */
+Artisan::command('survey:nudge:send {wave} {campaign} {--limit=0} {--dry} {--op=}', function (CampaignService $svc) {
+    $wave     = strtolower((string)$this->argument('wave'));
+    $campaign = (string)$this->argument('campaign');
+    $limit    = (int)$this->option('limit');
+    $dry      = (bool)$this->option('dry');
+    $forceOp  = (string)$this->option('op') ?: null;
+
+    if (!in_array($wave, ['day3','day7','thanks','day14','nov','dec_mid'], true)) {
+        $this->error("Wave inválida: {$wave}");
+        return self::FAILURE;
+    }
+
+    $res = $svc->sendNudge($wave, $campaign, $limit, $dry, $forceOp);
+    $this->info("Nudge {$wave} " . ($dry ? '(dry-run) ' : '') . "→ sent={$res['sent']} skipped={$res['skipped']} / total={$res['total']}");
+})->purpose('Enviar masivo de recordatorios');
