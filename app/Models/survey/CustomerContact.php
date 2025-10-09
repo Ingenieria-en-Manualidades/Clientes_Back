@@ -33,4 +33,9 @@ class CustomerContact extends Model
     {
         return $this->belongsTo(Charge::class, 'charge_id', 'charge_id');
     }
+
+    public function customer_contact_has_survey()
+    {
+        return $this->hasMany(CustomerContactHasSurvey::class, 'customer_contact_id', 'customer_contact_id');
+    }
 }
