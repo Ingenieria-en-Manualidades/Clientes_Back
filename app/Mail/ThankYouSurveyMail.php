@@ -16,7 +16,7 @@ class ThankYouSurveyMail extends Mailable
     {
         $base = public_path('images/mail');
 
-        $headerPath = $base . DIRECTORY_SEPARATOR . 'header.png';
+        $headerPath = $base . DIRECTORY_SEPARATOR . 'header22.png';
 
 
         return $this->subject('¡Gracias por tu confianza y tu tiempo!')

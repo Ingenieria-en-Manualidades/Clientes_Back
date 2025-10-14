@@ -50,7 +50,7 @@ $publicBase = asset('images/mail');
                             @if(!empty($headerPath) && is_file($headerPath))
                             <img src="{{ $message->embed($headerPath) }}" alt="IM Ingeniería" class="header-img" style="display:block;width:600px;max-width:100%;height:auto;">
                             @else
-                            <img src="{{ $publicBase }}/header.png" alt="IM Ingeniería" class="header-img" style="display:block;width:600px;max-width:100%;height:auto;">
+                            <img src="{{ $publicBase }}/header22.png" alt="IM Ingeniería" class="header-img" style="display:block;width:600px;max-width:100%;height:auto;">
                             @endif
                         </td>
                     </tr>

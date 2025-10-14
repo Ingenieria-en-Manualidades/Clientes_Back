@@ -86,14 +86,14 @@ class CampaignService
      * ----------------------------------------*/
     public function sendRebranding(string $campaign, int $limit = 0, bool $dry = false): array
     {
-        $hasMailLogs = Schema::hasTable('mail_logs');
+        $hasMailLogs = Schema::hasTable('surveys.mail_logs');
 
         $q = $this->relatedContactsQuery();
 
         if ($hasMailLogs) {
             $q->whereNotExists(function ($s) use ($campaign) {
                 $s->select(DB::raw(1))
-                    ->from('mail_logs as ml')
+                    ->from('surveys.mail_logs as ml')
                     ->whereColumn('ml.email', 'cc.email')
                     ->where('ml.campaign', $campaign);
             });
@@ -126,7 +126,7 @@ class CampaignService
                 ));
 
                 if ($hasMailLogs) {
-                    DB::table('mail_logs')->insert([
+                    DB::table('surveys.mail_logs')->insert([
                         'campaign'   => $campaign,
                         'client_id'  => $r->client_id,
                         'user_id'    => $r->user_id,
@@ -149,10 +149,10 @@ class CampaignService
      * ----------------------------------------*/
    public function sendNudge(string $wave, string $campaign, int $limit = 0, bool $dry = false, ?string $forceOp = null): array
 {
-    $hasMailLogs  = Schema::hasTable('mail_logs');
+    $hasMailLogs  = Schema::hasTable('surveys.mail_logs');
     $waveCampaign = "{$campaign}:{$wave}";
 
-    $q = DB::table('mail_logs as ml')
+    $q = DB::table('surveys.mail_logs as ml')
         ->join('surveys.customer_contact as cc', 'cc.email', '=', 'ml.email')
         ->leftJoin('cliente_user as cu', 'cu.user_id', '=', 'cc.user_id')
         ->leftJoin('clientes as c', 'c.id', '=', 'cu.cliente_id')
@@ -205,7 +205,7 @@ class CampaignService
                 wave:      $wave
             ));
             if ($hasMailLogs) {
-                DB::table('mail_logs')->insert([
+                DB::table('surveys.mail_logs')->insert([
                     'campaign'   => $waveCampaign,
                     'client_id'  => $r->client_id,
                     'user_id'    => $r->user_id,
