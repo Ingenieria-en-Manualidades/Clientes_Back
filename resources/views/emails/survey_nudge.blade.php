@@ -152,6 +152,10 @@ true,
                 </tr>
               </table>
 
+              <p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#2b2b2b;">
+                <strong>Usuario</strong>: {{$username}}<br><strong>Contraseña</strong>: {{$tempPassword ?? 'Temporal01'}}
+              </p>
+
               @if($mainBlock[3] ?? false)
               <p style="margin:0 0 24px;">
                 <a href="{{ $surveyUrl }}" target="_blank" rel="noopener"
@@ -160,16 +164,6 @@ true,
                             border:1px solid #EAB308;">
                   Responder encuesta
                 </a>
-              </p>
-              @endif
-
-              @if($wave === 'thanks')
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#2b2b2b;">
-                ¡Seguiremos trabajando para ti!
-              </p>
-              @else
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#2b2b2b;">
-                Gracias por acompañarnos en este camino.
               </p>
               @endif
             </td>
