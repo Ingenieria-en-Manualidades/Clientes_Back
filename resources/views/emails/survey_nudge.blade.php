@@ -5,7 +5,7 @@ $publicBase= asset('images/mail');
 
 $opMap = [
 'Logistica' => 'IM LOGISTICA.png',
-'Manufactura' => 'IM MANUFACTURA.png',
+'Manufactura' => 'IM MANUFACTURA.png', 
 'Maquila' => 'IM MAQUILA.png',
 'Aeropuertos' => 'IM AEROPUERTOS.png',
 'zona_franca' => 'IM ZONA FRANCA.png',
