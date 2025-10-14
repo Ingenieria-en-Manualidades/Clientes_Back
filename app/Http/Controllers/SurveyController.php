@@ -12,6 +12,7 @@ use App\Models\survey\SurveyHasQuestion;
 use App\Models\survey\Charge;
 use App\Models\survey\Clients;
 use App\Models\survey\CustomerContact;
+use App\Models\survey\CustomerContactHasSurvey;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -66,7 +67,7 @@ class SurveyController extends Controller
 
             $user = DB::table('users')->select('users.id')->where('users.name', $validatedData['username'])->whereNull('users.deleted_at')->first();
             if (!$user) {
-                return response()->json(['title' => 'Error de usuario.', 'message' => 'Usuario no encontrado.'], 404);
+                return response()->json(['title' => 'Error de usuario.','message' => 'Usuario no encontrado.'], 404);
             }
 
             DB::transaction(function () use ($validatedData, $user, &$survey) {
