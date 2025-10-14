@@ -1,31 +1,42 @@
 <?php
 
-// app/Listeners/MarkMailLogAsSent.php
 namespace App\Listeners;
 
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Support\Facades\DB;
 
-class MarkMailLogAsSent
+class MarkMailLogAsSent implements ShouldQueue
 {
     public function handle(MessageSent $event): void
     {
-        $symfony = $event->message;
-        $to = $symfony->getTo();
-        $email = $to ? array_key_first($to) : null;
-
-        // Si añadiste cabecera X-Campaign en el mailable, úsala
-        $campaign = $symfony->getHeaders()->getHeaderBody('X-Campaign');
-
+        $symfony  = $event->message;
+        $headers  = $symfony->getHeaders();
+        $logId    = $headers->get('X-Log-Id')?->getBodyAsString();
+        $campaign = $headers->get('X-Campaign')?->getBodyAsString();
+        $toObjs   = $symfony->getTo() ?? [];
+        $email    = $toObjs ? reset($toObjs)->getAddress() : null;
         if (!$email) return;
 
-        $q = DB::table('mail_logs')->where('email', $email);
-        if ($campaign) $q->where('campaign', $campaign);
+        // Preferir logId si existe
+        if ($logId) {
+            DB::table('surveys.mail_logs')
+              ->where('id', $logId)
+              ->update(['status' => 'sent', 'error' => null, 'updated_at' => now()]);
+            return;
+        }
 
-        $q->orderByDesc('id')->limit(1)->update([
-            'status'     => 'sent',
-            'updated_at' => now(),
-            'error'      => null,
-        ]);
+        // Fallback por email/campaign al último registro
+        $lastId = DB::table('surveys.mail_logs')
+            ->where('email', $email)
+            ->when($campaign, fn($q) => $q->where('campaign', $campaign))
+            ->orderByDesc('created_at')
+            ->value('id');
+
+        if ($lastId) {
+            DB::table('surveys.mail_logs')
+              ->where('id', $lastId)
+              ->update(['status' => 'sent', 'error' => null, 'updated_at' => now()]);
+        }
     }
 }

@@ -176,7 +176,7 @@ class CampaignService
     if ($hasMailLogs) {
         $q->whereNotExists(function ($s) use ($waveCampaign) {
             $s->select(DB::raw(1))
-              ->from('mail_logs as ml2')
+              ->from('surveys.mail_logs as ml2')
               ->whereColumn('ml2.email', 'ml.email')
               ->where('ml2.campaign', $waveCampaign);
         });

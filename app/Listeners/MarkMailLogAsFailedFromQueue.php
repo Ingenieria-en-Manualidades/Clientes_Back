@@ -1,54 +1,58 @@
 <?php
 
-
 // app/Listeners/MarkMailLogAsFailedFromQueue.php
 namespace App\Listeners;
 
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-class MarkMailLogAsFailedFromQueue
+class MarkMailLogAsFailedFromQueue implements ShouldQueue
 {
     public function handle(JobFailed $event): void
     {
-        // Solo correos (job del mailable encolado)
-        if (! Str::endsWith($event->job->resolveName(), 'Illuminate\\Mail\\SendQueuedMailable')) {
-            return;
-        }
+        if (! Str::endsWith($event->job->resolveName(), 'Illuminate\\Mail\\SendQueuedMailable')) return;
 
-        // Intentar extraer el destinatario/campaña del payload serializado
-        $payload = $event->job->payload();
-        $command = $payload['data']['command'] ?? null;
-        $email   = null;
-        $campaign = null;
+        $payload  = $event->job->payload();
+        $command  = $payload['data']['command'] ?? null;
+
+        $logId = null; $email = null; $campaign = null;
 
         if (is_string($command)) {
             try {
                 $obj = @unserialize($command, ['allowed_classes' => true]);
-                // $obj es Illuminate\Mail\SendQueuedMailable
-                // Extraer destinatarios y mailable interno
                 if (isset($obj->message)) {
-                    $symfony = $obj->message->getSymfonyMessage();
-                    $to = $symfony->getTo();
-                    $email = $to ? array_key_first($to) : null;
-                    $campaign = $symfony->getHeaders()->getHeaderBody('X-Campaign');
+                    $symfony  = $obj->message->getSymfonyMessage();
+                    $campaign = $symfony->getHeaders()->get('X-Campaign')?->getBodyAsString();
+                    $logId    = $symfony->getHeaders()->get('X-Log-Id')?->getBodyAsString();
+                    $toObjs   = $symfony->getTo() ?? [];
+                    $email    = $toObjs ? reset($toObjs)->getAddress() : null;
                 }
-            } catch (\Throwable $e) {
-                // ignora
-            }
+            } catch (\Throwable) { /* ignore */ }
         }
 
-        // Fallback: si no logramos leer email del payload, no podemos mapear con precisión
-        if (! $email) return;
+        $error = (string) $event->exception?->getMessage();
+        $this->updateFailed($logId, $email, $campaign, $error);
+    }
 
-        $q = DB::table('mail_logs')->where('email', $email);
-        if ($campaign) $q->where('campaign', $campaign);
+    private function updateFailed(?string $logId, ?string $email, ?string $campaign, string $error): void
+    {
+        if ($logId) {
+            DB::table('surveys.mail_logs')->where('id',$logId)
+              ->update(['status'=>'failed','error'=>$error,'updated_at'=>now()]);
+            return;
+        }
+        if (!$email) return;
 
-        $q->orderByDesc('id')->limit(1)->update([
-            'status'     => 'failed',
-            'error'      => (string) $event->exception?->getMessage(),
-            'updated_at' => now(),
-        ]);
+        $lastId = DB::table('surveys.mail_logs')
+            ->where('email',$email)
+            ->when($campaign,fn($q)=>$q->where('campaign',$campaign))
+            ->orderByDesc('created_at')->value('id');
+
+        if ($lastId) {
+            DB::table('surveys.mail_logs')->where('id',$lastId)
+              ->update(['status'=>'failed','error'=>$error,'updated_at'=>now()]);
+        }
     }
 }
