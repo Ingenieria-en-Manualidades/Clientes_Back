@@ -70,7 +70,12 @@ class SurveyController extends Controller
                 return response()->json(['title' => 'Error de usuario.','message' => 'Usuario no encontrado.'], 404);
             }
 
-            DB::transaction(function () use ($validatedData, $user, &$survey) {
+            $customerContact = CustomerContact::where('user_id', $user->id)->first();
+            if (!$customerContact) {
+                return response()->json(['title' => 'Error del contacto.','message' => 'Contacto del cliente no encontrado.'], 404);
+            }
+
+            DB::transaction(function () use ($validatedData, $user, &$survey, $customerContact) {
                 $survey = new Survey();
                 $survey->start_time = $validatedData['start_time'];
                 $survey->fullname = $validatedData['fullname'];
@@ -80,6 +85,21 @@ class SurveyController extends Controller
                 $survey->username = $validatedData['username'];
                 $survey->another_charge = $validatedData['another_charge'] ?? null;
                 $survey->save();
+
+                // Save the traceability of the surveys, making sure to save it in the 'customer_contact_has_survey' table.
+                $year = new DateTime($validatedData['start_time']);
+                $traceabilitySurvey = CustomerContactHasSurvey::where('year', 'like', $year->format('Y') . '%')->where('customer_contact_id',$customerContact->customer_contact_id)
+                ->orderBy('customer_contact_has_survey_id', 'desc')->first();
+
+                $contactHasSurvey = new CustomerContactHasSurvey();
+                $contactHasSurvey->customer_contact_id = $customerContact->customer_contact_id;
+                $contactHasSurvey->survey_id = $survey->survey_id;
+                $contactHasSurvey->year = $year->format('Y-m-d');
+                if ($traceabilitySurvey) {
+                    $contactHasSurvey->version = $traceabilitySurvey->version + 1;
+                }
+                $contactHasSurvey->username = $validatedData['username'];
+                $contactHasSurvey->save();
 
                 foreach ($validatedData['answers'] as $answer) {
                     $surveyHasQuestion = new SurveyHasQuestion();
