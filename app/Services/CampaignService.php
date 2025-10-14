@@ -167,20 +167,20 @@ class CampaignService
         ])
         ->where('ml.campaign', $campaign);
 
-    if (in_array($wave, ['day3','day7','thanks'], true)) {
-        $days = ['day3'=>3,'day7'=>7,'thanks'=>10][$wave];
-        $targetDate = now()->subDays($days)->toDateString();
-        $q->whereDate('ml.created_at', $targetDate);
-    }
+    // if (in_array($wave, ['day3','day7','thanks'], true)) {
+    //     $days = ['day3'=>3,'day7'=>7,'thanks'=>10][$wave];
+    //     $targetDate = now()->subDays($days)->toDateString();
+    //     $q->whereDate('ml.created_at', $targetDate);
+    // }
 
-    if ($hasMailLogs) {
-        $q->whereNotExists(function ($s) use ($waveCampaign) {
-            $s->select(DB::raw(1))
-              ->from('surveys.mail_logs as ml2')
-              ->whereColumn('ml2.email', 'ml.email')
-              ->where('ml2.campaign', $waveCampaign);
-        });
-    }
+    // if ($hasMailLogs) {
+    //     $q->whereNotExists(function ($s) use ($waveCampaign) {
+    //         $s->select(DB::raw(1))
+    //           ->from('surveys.mail_logs as ml2')
+    //           ->whereColumn('ml2.email', 'ml.email')
+    //           ->where('ml2.campaign', $waveCampaign);
+    //     });
+    // }
 
     if ($limit > 0) $q->limit($limit);
     $rows = $q->get();
