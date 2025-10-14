@@ -152,35 +152,40 @@ class CampaignService
     $hasMailLogs  = Schema::hasTable('surveys.mail_logs');
     $waveCampaign = "{$campaign}:{$wave}";
 
-    $q = DB::table('surveys.mail_logs as ml')
-        ->join('surveys.customer_contact as cc', 'cc.email', '=', 'ml.email')
-        ->leftJoin('cliente_user as cu', 'cu.user_id', '=', 'cc.user_id')
-        ->leftJoin('clientes as c', 'c.id', '=', 'cu.cliente_id')
-        ->leftJoin('surveys.type_operation_has_clients as toc', 'toc.clients_id', '=', 'c.id')
-        ->leftJoin('surveys.type_operation as to', 'to.type_operation_id', '=', 'toc.type_operation_id')
-        ->select([
-            'c.id        as client_id',
-            'cc.user_id  as user_id',
-            'cc.fullname as contact_name',
-            'cc.email    as email',
-            'to.description as operation_desc', // <-- operación real
-        ])
-        ->where('ml.campaign', $campaign);
+$q = DB::table('surveys.mail_logs as ml')
+    ->join('surveys.customer_contact as cc', 'cc.email', '=', 'ml.email')
+    ->leftJoin('cliente_user as cu', 'cu.user_id', '=', 'cc.user_id')
+    ->leftJoin('clientes as c', 'c.id', '=', 'cu.cliente_id')
+    ->leftJoin('surveys.type_operation_has_clients as toc', 'toc.clients_id', '=', 'c.id')
+    ->leftJoin('surveys.type_operation as to', 'to.type_operation_id', '=', 'toc.type_operation_id')
+    ->where('ml.campaign', $campaign)
 
-    // if (in_array($wave, ['day3','day7','thanks'], true)) {
-    //     $days = ['day3'=>3,'day7'=>7,'thanks'=>10][$wave];
-    //     $targetDate = now()->subDays($days)->toDateString();
-    //     $q->whereDate('ml.created_at', $targetDate);
-    // }
+    // no repetir el mismo wave
+    ->whereNotExists(function ($s) use ($waveCampaign) {
+        $s->select(DB::raw(1))
+          ->from('surveys.mail_logs as ml2')
+          ->whereColumn('ml2.email', 'ml.email')
+          ->where('ml2.campaign', $waveCampaign);
+    })
 
-    // if ($hasMailLogs) {
-    //     $q->whereNotExists(function ($s) use ($waveCampaign) {
-    //         $s->select(DB::raw(1))
-    //           ->from('surveys.mail_logs as ml2')
-    //           ->whereColumn('ml2.email', 'ml.email')
-    //           ->where('ml2.campaign', $waveCampaign);
-    //     });
-    // }
+    // enviar recordatorio SOLO si NO hay registro de diligenciamiento
+    ->whereNotExists(function ($s) {
+        $s->select(DB::raw(1))
+          ->from('surveys.customer_contact_has_survey as cchs')
+          ->join('surveys.survey as sv', 'sv.survey_id', '=', 'cchs.survey_id')
+          ->whereColumn('cchs.customer_contact_id', 'cc.customer_contact_id')
+          ->whereNull('cchs.deleted_at')
+          ->where('cchs.active', true)
+          ->where('sv.active', true);   // usa la encuesta activa
+    })
+
+    ->select([
+        DB::raw('coalesce(c.id, 0) as client_id'),
+        'cc.user_id  as user_id',
+        'cc.fullname as contact_name',
+        'ml.email    as email',
+        'to.description as operation_desc',
+    ]);    
 
     if ($limit > 0) $q->limit($limit);
     $rows = $q->get();
