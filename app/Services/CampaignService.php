@@ -161,12 +161,12 @@ $q = DB::table('surveys.mail_logs as ml')
     ->where('ml.campaign', $campaign)
 
     // no repetir el mismo wave
-    ->whereNotExists(function ($s) use ($waveCampaign) {
-        $s->select(DB::raw(1))
-          ->from('surveys.mail_logs as ml2')
-          ->whereColumn('ml2.email', 'ml.email')
-          ->where('ml2.campaign', $waveCampaign);
-    })
+    // ->whereNotExists(function ($s) use ($waveCampaign) {
+    //     $s->select(DB::raw(1))
+    //       ->from('surveys.mail_logs as ml2')
+    //       ->whereColumn('ml2.email', 'ml.email')
+    //       ->where('ml2.campaign', $waveCampaign);
+    // })
 
     // enviar recordatorio SOLO si NO hay registro de diligenciamiento
     ->whereNotExists(function ($s) {
