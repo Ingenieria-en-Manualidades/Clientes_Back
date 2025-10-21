@@ -15,7 +15,11 @@ class SurveyNudgeMail extends Mailable /* implements ShouldQueue */
         public string $name,
         public string $operation,      // 'logistica'|'manufactura'|'maquila'|'aeropuertos'|'zona_franca'|'soluciones'
         public string $surveyUrl,
-        public string $wave            // 'day3'|'day7'|'thanks'|'day14'|'nov'|'dec_mid'
+        public string $wave,   
+        public ?string $contactPhone = null,
+        public ?string $contactEmail = null,
+        public ?string $username = null,    
+  public ?string $tempPassword = null         // 'day3'|'day7'|'thanks'|'day14'|'nov'|'dec_mid'
     ) {}
 
     public function build()
