@@ -162,8 +162,8 @@ class SurveyController extends Controller
             return response()->json(['title' => 'Exito.', 'message' => 'Encuesta enviada.'], 200);
         } catch (ValidationException $e) {
             return response()->json(['title' => 'Error de validación.', 'message' => 'Error en la encuesta enviada.', 'error' => $e->getMessage()], 422);
-        } catch (\Exception $e) {
-            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo con el servidor.', 'error' => $e->getMessage()], 500);
+        } catch (\Throwable $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
         }
     }
 
