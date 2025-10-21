@@ -148,90 +148,103 @@ class CampaignService
      * Recordatorios (waves)
      * ----------------------------------------*/
     public function sendNudge(string $wave, string $campaign, int $limit = 0, bool $dry = false, ?string $forceOp = null): array
-{
-    $hasMailLogs  = Schema::hasTable('surveys.mail_logs');
-    $waveCampaign = "{$campaign}:{$wave}";
+    {
+        $hasMailLogs  = Schema::hasTable('surveys.mail_logs');
+        $waveCampaign = "{$campaign}:{$wave}";
 
-    $q = DB::table('surveys.mail_logs as ml')
-        ->join('surveys.customer_contact as cc', 'cc.email', '=', 'ml.email')
-        ->leftJoin('cliente_user as cu', 'cu.user_id', '=', 'cc.user_id')
-        ->leftJoin('clientes as c', 'c.id', '=', 'cu.cliente_id')
-        ->leftJoin('surveys.type_operation_has_clients as toc', 'toc.clients_id', '=', 'c.id')
-        ->leftJoin('surveys.type_operation as to', 'to.type_operation_id', '=', 'toc.type_operation_id')
-        // base: enviados en la campaña original
-        ->where('ml.campaign', $campaign)
-        // no repetir el mismo wave
-        // ->whereNotExists(function ($s) use ($waveCampaign) {
-        //     $s->select(DB::raw(1))
-        //       ->from('surveys.mail_logs as ml2')
-        //       ->whereColumn('ml2.email', 'ml.email')
-        //       ->where('ml2.campaign', $waveCampaign);
-        // })
-        // solo a quienes no han diligenciado la encuesta activa
-        ->whereNotExists(function ($s) {
-            $s->select(DB::raw(1))
-              ->from('surveys.customer_contact_has_survey as cchs')
-              ->join('surveys.survey as sv', 'sv.survey_id', '=', 'cchs.survey_id')
-              ->whereColumn('cchs.customer_contact_id', 'cc.customer_contact_id')
-              ->whereNull('cchs.deleted_at')
-              ->where('cchs.active', true)
-              ->where('sv.active', true);
-        })
-        ->select([
-            DB::raw('coalesce(c.id, 0) as client_id'),
-            'cc.user_id  as user_id',
-            'cc.fullname as contact_name',
-            'ml.email    as email',
-            'to.description as operation_desc',
-        ])
-        // evita duplicados por joins
-        ->groupBy('c.id', 'cc.user_id', 'cc.fullname', 'ml.email', 'to.description');
+        $q = DB::table('surveys.mail_logs as ml')
+            ->join('surveys.customer_contact as cc', 'cc.email', '=', 'ml.email')
+            ->leftJoin('cliente_user as cu', 'cu.user_id', '=', 'cc.user_id')
+            ->leftJoin('clientes as c', 'c.id', '=', 'cu.cliente_id')
+            ->leftJoin('surveys.type_operation_has_clients as toc', 'toc.clients_id', '=', 'c.id')
+            ->leftJoin('surveys.type_operation as to', 'to.type_operation_id', '=', 'toc.type_operation_id')
+            ->where('ml.campaign', $campaign)
 
-    if ($limit > 0) $q->limit($limit);
-    $rows = $q->get();
+            // no repetir el mismo wave
+            // ->whereNotExists(function ($s) use ($waveCampaign) {
+            //     $s->select(DB::raw(1))
+            //       ->from('surveys.mail_logs as ml2')
+            //       ->whereColumn('ml2.email', 'ml.email')
+            //       ->where('ml2.campaign', $waveCampaign);
+            // })
 
-    $surveyUrl = config('rebranding.survey_url');
-    $sent = 0;
-    $skipped = 0;
+            // enviar recordatorio SOLO si NO hay registro de diligenciamiento
+            ->whereNotExists(function ($s) {
+                $s->select(DB::raw(1))
+                    ->from('surveys.customer_contact_has_survey as cchs')
+                    ->join('surveys.survey as sv', 'sv.survey_id', '=', 'cchs.survey_id')
+                    ->whereColumn('cchs.customer_contact_id', 'cc.customer_contact_id')
+                    ->whereNull('cchs.deleted_at')
+                    ->where('cchs.active', true)
+                    ->where('sv.active', true);   // usa la encuesta activa
+            })
 
-    foreach ($rows as $r) {
-        $email = $r->email;
-        if (!$email) { $skipped++; continue; }
+            ->select([
+                DB::raw('coalesce(c.id, 0) as client_id'),
+                'cc.user_id  as user_id',
+                'cc.fullname as contact_name',
+                'ml.email    as email',
+                'to.description as operation_desc',
+            ]);
 
-        $name = $r->contact_name ?: 'Cliente';
-        $op   = $forceOp ?: $this->opToSlug($r->operation_desc ?? null);
+        if ($limit > 0) $q->limit($limit);
+        $rows = $q->get();
 
-        $responded = $this->hasResponded($email);
-        if (in_array($wave, ['day3','day7','day14','nov','dec_mid'], true) && $responded) { $skipped++; continue; }
-        if ($wave === 'thanks' && !$responded) { $skipped++; continue; }
+        $surveyUrl = config('rebranding.survey_url');
+        $sent = 0;
+        $skipped = 0;
 
-        if (!$dry) {
-            Mail::to($email)->queue(new SurveyNudgeMail(
-                name: $name,
-                operation: $op,
-                surveyUrl: $surveyUrl,
-                wave: $wave
-            ));
-
-            if ($hasMailLogs) {
-                DB::table('surveys.mail_logs')->insert([
-                    'campaign'   => $waveCampaign,
-                    'client_id'  => $r->client_id,
-                    'user_id'    => $r->user_id,
-                    'email'      => $email,
-                    'status'     => 'queued',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+        foreach ($rows as $r) {
+            $email = $r->email;
+            if (!$email) {
+                $skipped++;
+                continue;
             }
+            $name  = $r->contact_name ?: 'Cliente';
+            $op    = $forceOp ?: $this->opToSlug($r->operation_desc ?? null);
+            $username = $r->username ?? null;
+            $tmpPass  = 'Temporal01';
+
+            $responded = $this->hasResponded($email);
+            if (in_array($wave, ['day3', 'day7', 'day14', 'nov', 'dec_mid'], true) && $responded) {
+                $skipped++;
+                continue;
+            }
+            // if ($wave === 'thanks' && !$responded) {
+            //     $skipped++;
+            //     continue;
+            // }
+
+            
+
+            if (!$dry) {
+                Mail::to($email)->queue(new SurveyNudgeMail(
+                    name: $name,
+                    operation: $op,
+                    surveyUrl: $surveyUrl,
+                    wave: $wave,
+                    contactPhone: $r->contact_phone,
+                    username: $username,
+                    tempPassword: $tmpPass,
+                    contactEmail: $email
+                ));
+                if ($hasMailLogs) {
+                    DB::table('surveys.mail_logs')->insert([
+                        'campaign'   => $waveCampaign,
+                        'client_id'  => $r->client_id,
+                        'user_id'    => $r->user_id,
+                        'email'      => $email,
+                        'status'     => 'queued',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+            $sent++;
         }
 
-        $sent++;
+        return ['sent' => $sent, 'skipped' => $skipped, 'total' => count($rows)];
     }
-
-    return ['sent' => $sent, 'skipped' => $skipped, 'total' => $rows->count()];
-}
-
 
 
     /* ------------------------------------------
