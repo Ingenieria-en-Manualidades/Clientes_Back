@@ -182,7 +182,10 @@ class CampaignService
             ->select([
                 DB::raw('coalesce(c.id, 0) as client_id'),
                 'cc.user_id  as user_id',
+                'c.nombre     as client_name',
+                'u.name       as username',
                 'cc.fullname as contact_name',
+                'cc.cellphone as contact_phone',
                 'ml.email    as email',
                 'to.description as operation_desc',
             ]);
