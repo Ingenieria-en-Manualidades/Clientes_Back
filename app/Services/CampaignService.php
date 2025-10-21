@@ -90,14 +90,14 @@ class CampaignService
 
         $q = $this->relatedContactsQuery();
 
-        if ($hasMailLogs) {
-            $q->whereNotExists(function ($s) use ($campaign) {
-                $s->select(DB::raw(1))
-                    ->from('surveys.mail_logs as ml')
-                    ->whereColumn('ml.email', 'cc.email')
-                    ->where('ml.campaign', $campaign);
-            });
-        }
+        // if ($hasMailLogs) {
+        //     $q->whereNotExists(function ($s) use ($campaign) {
+        //         $s->select(DB::raw(1))
+        //             ->from('surveys.mail_logs as ml')
+        //             ->whereColumn('ml.email', 'cc.email')
+        //             ->where('ml.campaign', $campaign);
+        //     });
+        // }
 
         if ($limit > 0) $q->limit($limit);
         $rows = $q->get();
