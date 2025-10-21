@@ -181,7 +181,7 @@ Artisan::command('rebranding:send {campaign} {--limit=0} {--dry}', function (Cam
  * wave: day3|day7|thanks|day14|nov|dec_mid
  * Ej.: php artisan survey:nudge:send day3 2025D0 --limit=500
  */
-Artisan::command('survey:nudge:send {$campaign}:{$wave} {--limit=0} {--dry} {--op=}', function (CampaignService $svc) {
+Artisan::command('survey:nudge:send {campaign}:{wave} {--limit=0} {--dry} {--op=}', function (CampaignService $svc) {
     $wave     = strtolower((string)$this->argument('wave'));
     $campaign = (string)$this->argument('campaign');
     $limit    = (int)$this->option('limit');
