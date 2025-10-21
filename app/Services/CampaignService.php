@@ -158,6 +158,7 @@ class CampaignService
             ->leftJoin('clientes as c', 'c.id', '=', 'cu.cliente_id')
             ->leftJoin('surveys.type_operation_has_clients as toc', 'toc.clients_id', '=', 'c.id')
             ->leftJoin('surveys.type_operation as to', 'to.type_operation_id', '=', 'toc.type_operation_id')
+            ->leftJoin('users as u', 'u.id', '=', 'cc.user_id')
             ->where('ml.campaign', $campaign)
 
             // no repetir el mismo wave
