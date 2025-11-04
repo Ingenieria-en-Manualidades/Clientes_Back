@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use App\Models\Cliente;
 use App\Models\MetaUnidades;
 use Illuminate\Http\Request;
+use App\Models\UnidadesDiarias;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -151,7 +152,18 @@ class MetaUnidadesController extends Controller
                 $newMetaUnidades->save();
 
                 $metaUnidades->motivo_actualizacion = $validatedData['motivo_actualizacion'];
+                $metaUnidades->activo = 'n';
                 $metaUnidades->save();
+                $metaUnidades->delete();
+
+                $updateDayliUnits = UnidadesDiarias::where('meta_unidades_id', $metaUnidades->meta_unidades_id)
+                ->update([
+                    'meta_unidades_id' => $newMetaUnidades->meta_unidades_id,
+                ]);
+
+                if(!$updateDayliUnits){
+                    return response()->json(['title' => "Falla al actualizar.", 'message' => 'Error al actualizar la nueva meta de las unidades diarias.'], 409);
+                }
 
                 return response()->json(['title' => "Actualización exitosa.", 'message' => 'Meta de unidades actualizada correctamente.'], 200);
             } else {
