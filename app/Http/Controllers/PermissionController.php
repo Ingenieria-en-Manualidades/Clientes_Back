@@ -49,6 +49,21 @@ class PermissionController extends Controller
         //
     }
 
+    /**
+     * List all permissions from the database.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getListPermissions()
+    {
+        try {
+            $permissions = Permission::whereNull('deleted_at')->orderBy('name', 'asc')->get();
+            return response()->json(['data' => $permissions], 200);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function guardarUserPermission(Request $request){
         try {
             // Validar los datos entrantes

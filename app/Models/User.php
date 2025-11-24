@@ -40,6 +40,7 @@ class User extends Authenticatable
         'email',
         'password',
         'reset_password',
+        'empleado_id',
     ];
 
     /**

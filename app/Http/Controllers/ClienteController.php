@@ -8,6 +8,23 @@ use Illuminate\Support\Facades\Log;
 
 class ClienteController extends Controller
 {
+
+    // get all clients.
+    public function getClients()
+    {
+        try {
+            $clients = Cliente::orderBy('nombre','asc')->get();
+
+            if ($clients->isEmpty()) {
+                return response()->json(['title' => 'Clientes no encontrados.', 'message' => 'Sin clientes existentes.'], 404);
+            } else {
+                return response()->json(['data' => $clients], 200);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function getClientsByIds($arrayIds)
     {
         try {

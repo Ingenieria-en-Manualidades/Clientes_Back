@@ -19,7 +19,6 @@ class CustomerContact extends Model
         'cellphone',
         'email',
         'user_id',
-        'charge_id',
         'username',
         'active',
     ];

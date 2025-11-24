@@ -12,6 +12,9 @@ use Illuminate\View\View;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use App\Models\survey\CustomerContact;
+use App\Http\Controllers\PermissionController;
 
 
 class UserController extends Controller
@@ -79,6 +82,103 @@ class UserController extends Controller
         } catch (\Exception $e) {
             Log::error('Error al crear el usuario: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Hubo un error al crear el usuario: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Store a new user in the database.
+     *
+     * @desc This method validates and creates a new user with the specified permissions and clients.
+     * @param Request $request The HTTP request that contains the new user's data.
+     * @return \Illuminate\Http\RedirectResponse Redirects to the previous view with a success or error message.
+     */
+    public function storeFrontend(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'userType' => 'required|string|in:employee,client',
+            'employee_id' => 'nullable|string',
+            'fullname' => 'required|string|max:255',
+            'username' => 'required|string|max:255',
+            'cellphone' => 'required|string|max:20',
+            'email' => 'required|email|max:255',
+            'password' => 'required|string|min:8|confirmed',
+            'clients' => 'required|array',
+            'clients.*' => 'exists:clientes,cliente_endpoint_id',
+            'permissions' => 'required|array',
+            'permissions.*' => 'exists:permissions,id',
+            'creator_user' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['title' => 'Error de validación.', 'message' => $validator->errors(), 'error' => $validator->errors()], 422);
+        }
+
+        if ($request->userType === 'employee' && $request->filled('employee_id')) {
+            $userByEmployee = User::where('empleado_id', $request->employee_id)->first();
+            if ($userByEmployee) {
+                return response()->json(['title' => 'Empleado con usuario.', 'message' => "El empleado seleccionado ya tiene un usuario asignado con el nombre de usuario '{$userByEmployee->name}'."], 409);
+            }
+        }
+
+        // 2. Verificar si ya existe un usuario con el mismo username
+        $userByUsername = User::where('name', $request->username)->first();
+        if ($userByUsername) {
+            return response()->json(['title' => 'Nombre de usuario existente.', 'message' => "Ya existe un usuario con el nombre de usuario '{$request->username}'."], 409);
+        }
+
+        DB::beginTransaction();
+        try {
+            $user = new User();
+            $user->name = $request->username;
+            $user->email = $request->email;
+            $user->password = Hash::make($request->password);
+
+            if ($request->userType === 'employee') {
+                $user->empleado_id = $request->employee_id;
+            }
+            $user->save();
+
+            // 3. Si es cliente, crear CustomerContact
+            if ($request->userType === 'client') {
+                $customerContact = new CustomerContact();
+                $customerContact->fullname = $request->fullname;
+                $customerContact->cellphone = $request->cellphone;
+                $customerContact->email = $request->email;
+                $customerContact->user_id = $user->id;
+                $customerContact->username = $request->creator_user;
+                $customerContact->save();
+            }
+
+            // 4. Relacionar usuario con clientes
+            $clientsIds = Cliente::whereIn('cliente_endpoint_id', $request->clients)->pluck('id');
+            $user->clientes()->sync($clientsIds);
+
+            // 5. Relacionar usuario con permisos
+            $user->permissions()->sync($request->permissions);
+
+            DB::commit();
+            return response()->json(['title' => 'Exito.', 'message' => 'Usuario creado exitosamente.'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error en storeFrontend: ' . $e->getMessage());
+            return response()->json(['title' => 'Error de servidor.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
+        }
+    }
+    
+    public function getUsers() 
+    {
+        try {
+            $users = User::leftjoin('public.empleado as e', 'e.empleado_id', '=', 'users.empleado_id')
+            ->leftjoin('surveys.customer_contact as cc', 'cc.user_id', '=', 'users.id')
+            ->select('users.*', 
+                DB::raw("CONCAT(e.nombre, ' ', e.apellido) AS fullname"), 'e.nro_documento AS num_document', 'e.celular as cellphone', 
+                'cc.fullname as fullname_client', 'cc.cellphone as cellphone_client', 'cc.email as email_client'
+            )
+            ->get();
+
+            return response()->json(['data' => $users], 200);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error de servidor.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -245,6 +345,41 @@ class UserController extends Controller
             }
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'title' => 'Error desconocido al restablecer el usuario.', 'message' => 'Por favor recarga la página.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getEmployeesImecByClientsId(int $clients_id, Request $request)
+    {
+        try {
+            $token = $request->header(config('app.type_key_app_clients'));
+
+            $expectedToken = config('app.api_key_app_clients'); // Token predefinido
+
+            // Check if the token in the request matches the predefined token.
+            if ($token !== $expectedToken) {
+                return response()->json(['success' => 'error', 'title' => 'Token no válido', 'message' => 'Error en la petición al enviar el token incorrecto'], 401);
+            }
+
+            $employees = DB::table('public.empleado as e')
+            ->join('public.contrato as c', 'c.empleado_id', '=', 'e.empleado_id')
+            ->select(
+                'e.empleado_id',
+                'e.email',
+                'e.celular',
+                DB::raw("CONCAT(e.nombre, ' ', e.apellido) AS nombre"),
+                DB::raw("CONCAT(e.nro_documento, ' ',e.nombre, ' ', e.apellido) AS nombre_completo")
+            );
+            if ($clients_id != 0) {
+                $employees = $employees->where('c.cliente_id', $clients_id);
+            }
+            $employees = $employees->whereNull('c.deleted_at')
+            ->whereNull('e.deleted_at')
+            ->orderBy('e.nombre','asc')
+            ->get();
+            
+            return response()->json(['data' => $employees], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'title' => 'Error al retornar empleados.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
         }
     }
 }

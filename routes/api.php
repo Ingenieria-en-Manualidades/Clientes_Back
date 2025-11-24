@@ -56,6 +56,7 @@ Route::post('/actualizarObjetivos', [ObjetivoController::class, 'update']);
 Route::post('/guardarTablero', [Tablero_SaeController::class, 'create']);
 
 // Permission Routes
+Route::get('/getListPermissions', [PermissionController::class, 'getListPermissions']);
 Route::post('/relacionarUsuarioPermiso', [PermissionController::class, 'guardarUserPermission']);
 
 ////////////////////////////////////
@@ -65,6 +66,7 @@ Route::get('/getClientsByUserId', [ClienteUserController::class, 'getClientsByUs
 
 ////////////////////////////////////
 // Clientes Routes
+Route::get('/getClients', [ClienteController::class, 'getClients']);
 Route::get('/getClientsByIds/{arrayIds}', [ClienteController::class, 'getClientsByIds']);
 //-----------------------------------
 
@@ -106,3 +108,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/policy/status', [PrivacyPolicyController::class, 'status']);
     Route::post('/policy/accept',[PrivacyPolicyController::class, 'accept']);
 });
+
+////////////////////////////////////
+// User Routes Frontend
+Route::get('/getUsers', [UserController::class, 'getUsers']);
+Route::get('/resetUser/{id}', [UserController::class, 'resetUser']);
+Route::post('/createUser', [UserController::class, 'storeFrontend']);
+Route::get('/getEmployeesImec/{clients_id}', [UserController::class, 'getEmployeesImecByClientsId']);
