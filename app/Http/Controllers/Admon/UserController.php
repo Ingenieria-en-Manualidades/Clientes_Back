@@ -344,7 +344,7 @@ class UserController extends Controller
                 return response()->json(['success' => false, 'title' => 'Fallo al restablecer el usuario.', 'message' => 'No se pudo restablecer el usuario.'], 500);
             }
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'title' => 'Error desconocido al restablecer el usuario.', 'message' => 'Por favor recarga la página.', 'error' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'title' => 'Error desconocido al restablecer el usuario.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
         }
     }
 
