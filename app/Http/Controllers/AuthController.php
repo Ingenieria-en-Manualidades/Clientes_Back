@@ -83,16 +83,7 @@ try {
 
     $user = Auth::user();
 
-    $permissions = DB::table('user_permission')
-    ->join('users', 'users.id', '=', 'user_permission.user_id')
-    ->join('permissions', 'permissions.id', '=', 'user_permission.permission_id')
-    ->select('permissions.name')
-    ->where('users.id', $user->id)
-    ->whereNull('permissions.deleted_at')
-    ->whereNull('user_permission.deleted_at')
-    ->get();
-
-    // Log::info("PERMISOS: ", ['permisos' => $permissions]);
+    $permissions = $user->getAllPermissions()->whereNull('deleted_at')->pluck('name')->values();
 
     if ($user->activo === 'n') {
         Auth::logout();

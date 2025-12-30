@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use App\Models\survey\CustomerContact;
 use App\Http\Controllers\PermissionController;
 
@@ -103,7 +104,14 @@ class UserController extends Controller
             'email' => 'required|email|max:255',
             'password' => 'required|string|min:8|confirmed',
             'clients' => 'required|array',
-            'clients.*' => 'exists:clientes,cliente_endpoint_id',
+            'clients.*' => [
+                'integer',
+                Rule::when(
+                    fn () => !in_array("0", (array) $request->input('clients', []), true),
+                    'exists:clientes,cliente_endpoint_id'
+                ),
+            ],
+            'rol' => 'required|exists:roles,id',
             'permissions' => 'required|array',
             'permissions.*' => 'exists:permissions,id',
             'creator_user' => 'required|string|max:255',
@@ -120,7 +128,7 @@ class UserController extends Controller
             }
         }
 
-        // 2. Verificar si ya existe un usuario con el mismo username
+        // 2. Check if a user with the same username already exists.
         $userByUsername = User::where('name', $request->username)->first();
         if ($userByUsername) {
             return response()->json(['title' => 'Nombre de usuario existente.', 'message' => "Ya existe un usuario con el nombre de usuario '{$request->username}'."], 409);
@@ -138,7 +146,7 @@ class UserController extends Controller
             }
             $user->save();
 
-            // 3. Si es cliente, crear CustomerContact
+            // 3. If it is a customer, create "CustomerContact".
             if ($request->userType === 'client') {
                 $customerContact = new CustomerContact();
                 $customerContact->fullname = $request->fullname;
@@ -149,11 +157,22 @@ class UserController extends Controller
                 $customerContact->save();
             }
 
-            // 4. Relacionar usuario con clientes
-            $clientsIds = Cliente::whereIn('cliente_endpoint_id', $request->clients)->pluck('id');
+            // 4. Connect users with customers.
+            $clients = (array) $request->input('clients', []);
+
+            if (in_array("0", $clients, true)) {
+                // 0 => relate to all existing customers.
+                $clientsIds = Cliente::query()->pluck('id');
+            } else {
+                // relate only those selected by endpoint_id.
+                $clientsIds = Cliente::query()->whereIn('cliente_endpoint_id', $clients)->pluck('id');
+            }
             $user->clientes()->sync($clientsIds);
 
-            // 5. Relacionar usuario con permisos
+            // 5. Add role to user.
+            $user->roles()->sync([$request->rol]);
+
+            // 6. Link user with permissions.
             $user->permissions()->sync($request->permissions);
 
             DB::commit();
@@ -380,6 +399,17 @@ class UserController extends Controller
             return response()->json(['data' => $employees], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'title' => 'Error al retornar empleados.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getRoles()
+    {
+        try {
+            $roles = Role::with('permissions')->whereNull('deleted_at')->get();
+
+            return response()->json(['data' => $roles], 200);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error de servidor.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
         }
     }
 }
