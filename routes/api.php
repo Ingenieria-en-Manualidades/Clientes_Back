@@ -115,4 +115,5 @@ Route::get('/getUsers', [UserController::class, 'getUsers']);
 Route::get('/getRoles', [UserController::class, 'getRoles']);
 Route::get('/resetUser/{id}', [UserController::class, 'resetUser']);
 Route::post('/createUser', [UserController::class, 'storeFrontend']);
+Route::get('/getDataUserId/{id}', [UserController::class, 'getInformationUserById']);
 Route::get('/getEmployeesImec/{clients_id}', [UserController::class, 'getEmployeesImecByClientsId']);

@@ -112,7 +112,7 @@ class UserController extends Controller
                 ),
             ],
             'rol' => 'required|exists:roles,id',
-            'permissions' => 'required|array',
+            'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
             'creator_user' => 'required|string|max:255',
         ]);
@@ -184,9 +184,19 @@ class UserController extends Controller
         }
     }
     
-    public function getUsers() 
+    public function getUsers(Request $request) 
     {
         try {
+            // Get the token from the 'Authorization' header.
+            $token = $request->header(config('app.type_key_app_clients'));
+
+            $expectedToken = config('app.api_key_app_clients'); // Token predefinido
+
+            // Check if the token in the request matches the predefined token.
+            if ($token !== $expectedToken) {
+                return response()->json(['title' => 'Token no válido.', 'message' => 'Error en la petición al enviar el token incorrecto.'], 401);
+            }
+
             $users = User::leftjoin('public.empleado as e', 'e.empleado_id', '=', 'users.empleado_id')
             ->leftjoin('surveys.customer_contact as cc', 'cc.user_id', '=', 'users.id')
             ->select('users.*', 
@@ -399,6 +409,52 @@ class UserController extends Controller
             return response()->json(['data' => $employees], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'title' => 'Error al retornar empleados.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getInformationUserById(int $id, Request $request)
+    {
+        try {
+            // Get the token from the 'Authorization' header.
+            $token = $request->header(config('app.type_key_app_clients'));
+            $expectedToken = config('app.api_key_app_clients'); // Token predefinido
+
+            // Check if the token in the request matches the predefined token.
+            if ($token !== $expectedToken) {
+                return response()->json(['title' => 'Token no válido.', 'message' => 'Error en la petición al enviar el token incorrecto.'], 401);
+            }
+
+            $user = User::findOrFail($id);
+            if (!$user) {
+                return response()->json(['title' => 'Usuario no encontrado.', 'message' => 'El usuario con el ID proporcionado no existe.'], 404);
+            }
+
+            if($user->empleado_id){
+                $infoBasic = DB::table('public.empleado')->select(DB::raw("CONCAT(nombre, ' ', apellido) AS fullname"),'email','celular as cellphone')
+                ->where('empleado_id', $user->empleado_id)->first();
+                $userType = 'employee';
+            } else {
+                $infoBasic = DB::table('surveys.customer_contact')->select('fullname','email','cellphone')
+                ->where('user_id', $user->id)->first();
+                $userType = 'client';
+            }
+
+            $data = [
+                'id' => $user->id,
+                'userType' => $userType,
+                'employee_id' => $user->empleado_id ?? null,
+                'fullname' => $infoBasic->fullname ?? null,
+                'email' => $infoBasic->email ?? null,
+                'cellphone' => $infoBasic->cellphone ?? null,
+                'username' => $user->name,
+                'roles' => $user->roles->pluck('id')->map('strval')->toArray(),
+                'permissions' => $user->permissions->pluck('id')->map('strval')->toArray(),
+                'clients' => $user->clientes->pluck('cliente_endpoint_id')->map('strval')->toArray(),
+            ];
+
+            return response()->json(['data' => $data], 200);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error de servidor.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
         }
     }
 
