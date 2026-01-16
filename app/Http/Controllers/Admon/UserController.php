@@ -95,6 +95,15 @@ class UserController extends Controller
      */
     public function storeFrontend(Request $request)
     {
+        $token = $request->header(config('app.type_key_app_clients'));
+
+        $expectedToken = config('app.api_key_app_clients'); // Token predefinido
+
+        // Check if the token in the request matches the predefined token.
+        if ($token !== $expectedToken) {
+            return response()->json(['success' => 'error', 'title' => 'Token no válido', 'message' => 'Error en la petición al enviar el token incorrecto'], 401);
+        }
+        
         $validator = Validator::make($request->all(), [
             'userType' => 'required|string|in:employee,client',
             'employee_id' => 'nullable|string',
@@ -184,6 +193,13 @@ class UserController extends Controller
         }
     }
     
+    /**
+     * Displays a list of users.
+     *
+     * @desc This method retrieves all users and returns them as a JSON response.
+     * @param Request $request The HTTP request.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getUsers(Request $request) 
     {
         try {
@@ -197,11 +213,17 @@ class UserController extends Controller
                 return response()->json(['title' => 'Token no válido.', 'message' => 'Error en la petición al enviar el token incorrecto.'], 401);
             }
 
-            $users = User::leftjoin('public.empleado as e', 'e.empleado_id', '=', 'users.empleado_id')
-            ->leftjoin('surveys.customer_contact as cc', 'cc.user_id', '=', 'users.id')
-            ->select('users.*', 
-                DB::raw("CONCAT(e.nombre, ' ', e.apellido) AS fullname"), 'e.nro_documento AS num_document', 'e.celular as cellphone', 
-                'cc.fullname as fullname_client', 'cc.cellphone as cellphone_client', 'cc.email as email_client'
+            $users = User::withTrashed()
+            ->leftJoin('public.empleado as e', 'e.empleado_id', '=', 'users.empleado_id')
+            ->leftJoin('surveys.customer_contact as cc', 'cc.user_id', '=', 'users.id')
+            ->select(
+                'users.*',
+                DB::raw("CONCAT(e.nombre, ' ', e.apellido) AS fullname"),
+                'e.nro_documento AS num_document',
+                'e.celular as cellphone',
+                'cc.fullname as fullname_client',
+                'cc.cellphone as cellphone_client',
+                'cc.email as email_client'
             )
             ->get();
 
@@ -461,9 +483,167 @@ class UserController extends Controller
     public function getRoles()
     {
         try {
-            $roles = Role::with('permissions')->whereNull('deleted_at')->get();
+            $roles = Role::with('permissions')->whereNull('deleted_at')->orderBy('name','asc')->get();
 
             return response()->json(['data' => $roles], 200);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error de servidor.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update an existing user in the database from the frontend.
+     *
+     * @desc This method validates and updates an existing user with the new data and roles specified from the frontend.
+     * @param Request $request The HTTP request that contains the updated user data.
+     * @param int $id The user ID to be updated.
+     * @return \Illuminate\Http\JsonResponse JSON response with the result of the operation.
+     */
+    public function updateFrontend(int $id, Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'userType' => 'required|string|in:employee,client',
+            'employee_id' => 'nullable|string',
+            'fullname' => 'required|string|max:255',
+            'username' => 'required|string|max:255',
+            'cellphone' => 'required|string|max:20',
+            'email' => 'required|email|max:255',
+            'password' => 'nullable|string|confirmed',
+            'clients' => 'required|array',
+            'clients.*' => [
+                'integer',
+                Rule::when(
+                    fn () => !in_array("0", (array) $request->input('clients', []), true),
+                    'exists:clientes,cliente_endpoint_id'
+                ),
+            ],
+            'rol' => 'required|exists:roles,id',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'exists:permissions,id',
+            'creator_user' => 'required|string|max:255',
+        ]);
+
+        // Get the token from the 'Authorization' header.
+        $token = $request->header(config('app.type_key_app_clients'));
+        $expectedToken = config('app.api_key_app_clients'); // Token predefinido
+
+        // Check if the token in the request matches the predefined token.
+        if ($token !== $expectedToken) {
+            return response()->json(['title' => 'Token no válido.', 'message' => 'Error en la petición al enviar el token incorrecto.'], 401);
+        }
+
+        if ($validator->fails()) {
+            return response()->json(['title' => 'Error de validación.', 'message' => $validator->errors(), 'error' => $validator->errors()], 422);
+        }
+
+        $user = User::findOrFail($id);
+        if (!$user) {
+            return response()->json(['title' => 'Usuario no encontrado.', 'message' => 'El usuario con el ID proporcionado no existe.'], 404);
+        }
+
+        // Unicidad username/email/empleado_id frente a otros usuarios
+        if ($request->username !== $user->name && User::where('name', $request->username)->where('id', '!=', $user->id)->exists()) {
+            return response()->json(['title' => 'Nombre de usuario existente.', 'message' => "Ya existe un usuario con el nombre de usuario '{$request->username}'."], 409);
+        }
+
+        if ($request->email !== $user->email && User::where('email', $request->email)->where('id', '!=', $user->id)->exists()) {
+            return response()->json(['title' => 'Email existente.', 'message' => "Ya existe un usuario con el correo '{$request->email}'."], 409);
+        }
+
+        if ($request->userType === 'employee' && $request->filled('employee_id')) {
+            $existing = User::where('empleado_id', $request->employee_id)->where('id', '!=', $user->id)->first();
+            if ($existing) {
+                return response()->json(['title' => 'Empleado con usuario.', 'message' => "El empleado seleccionado ya tiene un usuario asignado con el nombre de usuario '{$existing->name}'."], 409);
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            $user->name = $request->username;
+            $user->email = $request->email;
+            if ($request->filled('password')) {
+                $user->password = Hash::make($request->password);
+            }
+
+            if ($request->userType === 'employee') {
+                $user->empleado_id = $request->employee_id;
+            }
+            $user->save();
+
+            // CustomerContact para clientes
+            if ($request->userType === 'client') {
+                $customerContact = CustomerContact::where('user_id', $user->id)->first();
+                if (!$customerContact) {
+                    $customerContact = new CustomerContact();
+                    $customerContact->user_id = $user->id;
+                }
+                $customerContact->fullname = $request->fullname;
+                $customerContact->cellphone = $request->cellphone;
+                $customerContact->email = $request->email;
+                $customerContact->username = $request->creator_user;
+                $customerContact->save();
+            }
+
+            // Clientes
+            $clients = (array) $request->input('clients', []);
+            if (in_array("0", $clients, true)) {
+                $clientsIds = Cliente::query()->pluck('id');
+            } else {
+                $clientsIds = Cliente::query()->whereIn('cliente_endpoint_id', $clients)->pluck('id');
+            }
+            $user->clientes()->sync($clientsIds);
+
+            // Rol
+            $user->roles()->sync([$request->rol]);
+
+            // Permisos
+            $user->permissions()->sync($request->permissions);
+
+            DB::commit();
+            return response()->json(['title' => 'Exito.', 'message' => 'Usuario actualizado exitosamente.'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error en updateFrontend: ' . $e->getMessage());
+            return response()->json(['title' => 'Error de servidor.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Alterna el estado activo/inactivo de un usuario.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse JSON response with the result of the operation.
+     */
+    public function setStatusUser (int $id, Request $request)
+    {
+        try {
+            // Get the token from the 'Authorization' header.
+            $token = $request->header(config('app.type_key_app_clients'));
+            $expectedToken = config('app.api_key_app_clients'); // Token predefinido
+
+            // Check if the token in the request matches the predefined token.
+            if ($token !== $expectedToken) {
+                return response()->json(['title' => 'Token no válido.', 'message' => 'Error en la petición al enviar el token incorrecto.'], 401);
+            }
+
+            $user = User::withTrashed()->findOrFail($id);
+
+            if (!$user) {
+                return response()->json(['title' => 'Usuario no encontrado.', 'message' => 'El usuario con el ID proporcionado no existe.'], 404);
+            }
+
+            if ($user->deleted_at) {
+                $user->restore();
+                $user->activo = 's';
+                $user->save();
+                return response()->json(['title' => 'Exito.', 'message' => 'Usuario habilitado exitosamente.'], 200);
+            } else {
+                $user->delete();
+                $user->activo = 'n';
+                $user->save();
+                return response()->json(['title' => 'Exito.', 'message' => 'Usuario deshabilitado exitosamente.'], 200);
+            }
+            
         } catch (\Exception $e) {
             return response()->json(['title' => 'Error de servidor.', 'message' => $e->getMessage(), 'error' => $e->getMessage()], 500);
         }
