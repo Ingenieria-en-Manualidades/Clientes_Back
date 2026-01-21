@@ -137,5 +137,6 @@ return [
 
     'api_key_app_clients' => env('API_KEY_CLIENTS',''),
     'type_key_app_clients' => env('TYPE_KEY_CLIENTS','',),
+    'url_frontend' => env('FRONTEND_URL','',),
 
 ];

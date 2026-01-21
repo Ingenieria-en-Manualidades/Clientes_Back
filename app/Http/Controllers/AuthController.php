@@ -277,7 +277,7 @@ try {
 
             $email = $validatedData['email'];
             $token = $validatedData['token'];
-            $link = env('FRONTEND_URL') . "/actualizarPassword-{$token}";
+            $link = config('app.url_frontend') . "actualizarPassword-{$token}";
 
             Mail::to($email)->send(new RecoverPasswordEmail($link,$email));
 

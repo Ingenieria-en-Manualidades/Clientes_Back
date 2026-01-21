@@ -54,7 +54,7 @@ class RecoverPasswordEmail extends Mailable
     public function attachments(): array
     {
         return [
-            Attachment::fromPath(public_path('images/im-policromia-vert.png'))->as('logo.png')->withMime('image/png'),
+            Attachment::fromPath(public_path('images/mail/IM INGENIERIA HORIZONTAL.png'))->as('logo.png')->withMime('image/png'),
         ];
     }
 }
