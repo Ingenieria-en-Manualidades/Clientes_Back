@@ -561,7 +561,7 @@ class UserController extends Controller
         try {
             $user->name = $request->username;
             $user->email = $request->email;
-            if ($request->filled('password')) {
+            if ($request->filled('password') && $request->password !== '*') {
                 $user->password = Hash::make($request->password);
             }
 
