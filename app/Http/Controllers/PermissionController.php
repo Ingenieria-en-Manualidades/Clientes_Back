@@ -8,6 +8,14 @@ use Spatie\Permission\Models\Permission;
 
 class PermissionController extends Controller
 {
+    private function ensureFrontendPermissions(): void
+    {
+        Permission::firstOrCreate([
+            'name' => 'view_clients',
+            'guard_name' => 'sanctum',
+        ]);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -57,6 +65,8 @@ class PermissionController extends Controller
     public function getListPermissions()
     {
         try {
+            $this->ensureFrontendPermissions();
+
             $permissions = Permission::whereNull('deleted_at')->orderBy('name', 'asc')->get();
             return response()->json(['data' => $permissions], 200);
         } catch (\Exception $e) {

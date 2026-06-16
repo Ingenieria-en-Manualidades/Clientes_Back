@@ -68,6 +68,11 @@ Route::get('/getClientsByUserId', [ClienteUserController::class, 'getClientsByUs
 // Clientes Routes
 Route::get('/getClients', [ClienteController::class, 'getClients']);
 Route::get('/getClientsByIds/{arrayIds}', [ClienteController::class, 'getClientsByIds']);
+Route::get('/getUsersByClient/{id}', [ClienteController::class, 'getUsersByClientId']);
+Route::post('/createClient', [ClienteController::class, 'createClient']);
+Route::post('/syncClients', [ClienteController::class, 'syncClients']);
+Route::put('/setStatusClient/{id}', [ClienteController::class, 'setStatusClient']);
+Route::put('/updateClient/{id}', [ClienteController::class, 'updateClient']);
 //-----------------------------------
 
 // File Routes
@@ -91,6 +96,7 @@ Route::get('getAreas/{clienteID}', [MetaUnidadesController::class, 'getAreasImec
 // Unidades Diarias Routes
 Route::get('/getDailyUnitsOfDay/{date}/{client_id}', [UnidadesDiariasController::class, 'getDailyUnitsOfDay']); //API GROOT
 Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);
+Route::post('/createUnidadesDiariasMasivo', [UnidadesDiariasController::class, 'createBulk']);
 Route::post('/updateUnidadesDiarias', [UnidadesDiariasController::class, 'update']);
 Route::get('/getListUnidadesDiarias/{meta_unidades_id}', [UnidadesDiariasController::class, 'list']);
 Route::get('/getUnidadesDiariaID/{unidades_diaria_id}', [UnidadesDiariasController::class, 'getUnidadesDiariaID']);
@@ -101,6 +107,8 @@ Route::get('/getUnidadesDiariaID/{unidades_diaria_id}', [UnidadesDiariasControll
 Route::post('/saveSurvey', [SurveyController::class, 'setSaveSurvey']);
 Route::get('/listCharges', [SurveyController::class, 'getListCharges']);
 Route::get('/listClients', [SurveyController::class, 'getListClients']);
+Route::get('/getUsersBySurveyClient/{id}', [SurveyController::class, 'getUsersBySurveyClientId']);
+Route::put('/updateSurveyClient/{id}', [SurveyController::class, 'updateSurveyClient']);
 Route::get('/getInformationUser/{username}', [SurveyController::class, 'getInformationUser']);
 
 Route::middleware('auth:sanctum')->group(function () {
