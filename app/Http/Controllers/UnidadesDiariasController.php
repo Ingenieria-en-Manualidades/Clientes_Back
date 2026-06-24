@@ -73,13 +73,20 @@ class UnidadesDiariasController extends Controller
             $metaUnidades = MetaUnidades::where('meta_unidades_id', $meta_unidades_id)->first();
 
             if ($metaUnidades) {
+                $dateMeta = new DateTime($metaUnidades->fecha_meta);
+                $metaUnidadesIds = MetaUnidades::where('clientes_id', $metaUnidades->clientes_id)
+                ->where('area_id_groot', $metaUnidades->area_id_groot)
+                ->where('fecha_meta', 'like', $dateMeta->format('Y-m') . '%')
+                ->pluck('meta_unidades_id')
+                ->toArray();
+
                 $data = UnidadesDiarias::select(
                     'unidades_diarias_id',
                     'fecha_programacion',
                     'valor',
                     'updated_at',
                     'usuario'
-                )->where('meta_unidades_id', $metaUnidades->meta_unidades_id)
+                )->whereIn('meta_unidades_id', $metaUnidadesIds)
                 ->orderBy('fecha_programacion', 'desc')
                 ->get();
                 return response()->json(['data' => $data], 200);
