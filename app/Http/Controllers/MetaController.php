@@ -7,6 +7,7 @@ use App\Models\Meta;
 use App\Models\Cliente;
 use App\Models\Tablero_Sae;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -82,6 +83,53 @@ class MetaController extends Controller
                 'message' => 'Ha ocurrido un error al guardar las metas',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function list(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'cliente_endpoint_id' => 'required|integer',
+                'fecha_inicio' => 'nullable|date',
+                'fecha_fin' => 'nullable|date',
+            ]);
+
+            $dateEnd = isset($validatedData['fecha_fin'])
+                ? Carbon::parse($validatedData['fecha_fin'])->endOfDay()
+                : Carbon::today()->endOfDay();
+            $dateStart = isset($validatedData['fecha_inicio'])
+                ? Carbon::parse($validatedData['fecha_inicio'])->startOfDay()
+                : Carbon::today()->subYear()->startOfDay();
+
+            $metas = DB::table('tablero_sae as ts')
+            ->join('meta as m', 'm.meta_id', '=', 'ts.meta_id')
+            ->join('clientes as c', 'c.id', '=', 'ts.cliente_id')
+            ->select(
+                'ts.tablero_sae_id',
+                'm.meta_id',
+                'ts.fecha',
+                'm.cumplimiento',
+                'm.eficiencia_productiva',
+                'm.calidad',
+                'm.desperdicio_me',
+                'm.desperdicio_pp',
+                'm.created_at',
+                'm.updated_at'
+            )
+            ->where('c.cliente_endpoint_id', '=', $validatedData['cliente_endpoint_id'])
+            ->whereBetween('ts.fecha', [$dateStart, $dateEnd])
+            ->whereNull('ts.deleted_at')
+            ->whereNull('m.deleted_at')
+            ->whereNull('c.deleted_at')
+            ->orderBy('ts.fecha', 'desc')
+            ->get();
+
+            return response()->json(['data' => $metas], 200);
+        } catch (ValidationException $e) {
+            return response()->json(['title' => 'Error de validación.', 'message' => 'Error en los filtros de metas.', 'error' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo al listar las metas.', 'error' => $e->getMessage()], 500);
         }
     }
 }

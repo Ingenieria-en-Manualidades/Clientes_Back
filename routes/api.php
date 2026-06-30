@@ -40,9 +40,11 @@ Route::post('/updatePasswordExpiration', [AuthController::class, 'updatePassword
 
 // Meta Routes
 Route::post('/guardarMeta', [MetaController::class, 'create']);
+Route::post('/listarMetas', [MetaController::class, 'list']);
 
 // Calidad Routes
 Route::post('/guardarCalidad', [CalidadController::class, 'create']);
+Route::post('/listarCalidades', [CalidadController::class, 'list']);
 Route::post('/verificarCalidad', [CalidadController::class, 'verificarValores']);
 
 // Accidentes Routes
@@ -50,6 +52,7 @@ Route::post('/guardarAccidente', [AccidentesController::class, 'create']);
 
 // Objetivos Routes
 Route::post('/guardarObjetivos', [ObjetivoController::class, 'create']);
+Route::post('/listarObjetivos', [ObjetivoController::class, 'list']);
 Route::post('/actualizarObjetivos', [ObjetivoController::class, 'update']);
 
 // Tablero Routes
