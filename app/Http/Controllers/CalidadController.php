@@ -7,12 +7,64 @@ use App\Models\File;
 use App\Models\Calidad;
 use App\Models\Tablero_Sae;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class CalidadController extends Controller
 {
+    public function list(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'cliente_endpoint_id' => 'required|integer',
+                'fecha_inicio' => 'nullable|date',
+                'fecha_fin' => 'nullable|date',
+            ]);
+
+            $dateEnd = isset($validatedData['fecha_fin'])
+                ? Carbon::parse($validatedData['fecha_fin'])->endOfDay()
+                : Carbon::today()->endOfDay();
+            $dateStart = isset($validatedData['fecha_inicio'])
+                ? Carbon::parse($validatedData['fecha_inicio'])->startOfDay()
+                : Carbon::today()->subMonth()->startOfDay();
+
+            $calidades = DB::table('calidad as ca')
+            ->join('meta as m', 'm.meta_id', '=', 'ca.meta_id')
+            ->join('tablero_sae as ts', 'ts.meta_id', '=', 'm.meta_id')
+            ->join('clientes as c', 'c.id', '=', 'ts.cliente_id')
+            ->leftJoin('files as f', function ($join) {
+                $join->on('f.tablero_sae_id', '=', 'ts.tablero_sae_id')
+                    ->whereNull('f.deleted_at');
+            })
+            ->select(
+                'ca.calidad_id',
+                'ts.tablero_sae_id',
+                'ts.fecha',
+                'ca.checklist',
+                'ca.inspeccion',
+                DB::raw('COUNT(f.files_id) as evidencias')
+            )
+            ->where('c.cliente_endpoint_id', '=', $validatedData['cliente_endpoint_id'])
+            ->whereBetween('ts.fecha', [$dateStart, $dateEnd])
+            ->whereNull('ca.deleted_at')
+            ->whereNull('m.deleted_at')
+            ->whereNull('ts.deleted_at')
+            ->whereNull('c.deleted_at')
+            ->groupBy('ca.calidad_id', 'ts.tablero_sae_id', 'ts.fecha', 'ca.checklist', 'ca.inspeccion')
+            ->orderBy('ts.fecha', 'desc')
+            ->get();
+
+            return response()->json(['data' => $calidades], 200);
+        } catch (ValidationException $e) {
+            return response()->json(['title' => 'Error de validación.', 'message' => 'Error en los filtros de cumplimiento mensual.', 'error' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo al listar el cumplimiento mensual.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
     /**
      * Método de guardado de calidad en la cual buscamos la meta_id a la cual pertenece la calida y 
      * verificamos que no haya valores ya ingresados en la inserción para no tener que guardar.
