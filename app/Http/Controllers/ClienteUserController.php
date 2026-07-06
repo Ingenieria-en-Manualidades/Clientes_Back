@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -13,13 +11,7 @@ class ClienteUserController extends Controller
     public function getClientsByUserId ()
     {
         try {
-            $credentials = [
-                'name' => "AUXSENA",
-                'password' => "eufrates03"
-            ];
-            // Auth::attempt($)
-            $user = Auth::user(credentials);
-            // $user = User::where('id', '=', 2)->first();
+            $user = Auth::user();
             Log::info("message", ['user' => $user]);
 
             if ($user) {

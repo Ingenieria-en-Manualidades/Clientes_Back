@@ -76,6 +76,12 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function setNameAttribute($value): void
+    {
+        $this->attributes['name'] = mb_strtoupper(trim((string) $value));
+    }
+
     public function adminlte_profile_url()
     {
         // Return the URL to the user's profile

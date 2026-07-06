@@ -40,9 +40,11 @@ Route::post('/updatePasswordExpiration', [AuthController::class, 'updatePassword
 
 // Meta Routes
 Route::post('/guardarMeta', [MetaController::class, 'create']);
+Route::post('/listarMetas', [MetaController::class, 'list']);
 
 // Calidad Routes
 Route::post('/guardarCalidad', [CalidadController::class, 'create']);
+Route::post('/listarCalidades', [CalidadController::class, 'list']);
 Route::post('/verificarCalidad', [CalidadController::class, 'verificarValores']);
 
 // Accidentes Routes
@@ -50,6 +52,7 @@ Route::post('/guardarAccidente', [AccidentesController::class, 'create']);
 
 // Objetivos Routes
 Route::post('/guardarObjetivos', [ObjetivoController::class, 'create']);
+Route::post('/listarObjetivos', [ObjetivoController::class, 'list']);
 Route::post('/actualizarObjetivos', [ObjetivoController::class, 'update']);
 
 // Tablero Routes
@@ -68,6 +71,11 @@ Route::get('/getClientsByUserId', [ClienteUserController::class, 'getClientsByUs
 // Clientes Routes
 Route::get('/getClients', [ClienteController::class, 'getClients']);
 Route::get('/getClientsByIds/{arrayIds}', [ClienteController::class, 'getClientsByIds']);
+Route::get('/getUsersByClient/{id}', [ClienteController::class, 'getUsersByClientId']);
+Route::post('/createClient', [ClienteController::class, 'createClient']);
+Route::post('/syncClients', [ClienteController::class, 'syncClients']);
+Route::put('/setStatusClient/{id}', [ClienteController::class, 'setStatusClient']);
+Route::put('/updateClient/{id}', [ClienteController::class, 'updateClient']);
 //-----------------------------------
 
 // File Routes
@@ -81,6 +89,8 @@ Route::post('/deleteFile', [FileController::class, 'delete']);
 // Unidades Mensuales Routes
 Route::post('/metaUnidadesExists', [MetaUnidadesController::class, 'exists']);
 Route::post('/createMetaUnidades', [MetaUnidadesController::class, 'create']);
+Route::post('/createMetaUnidadesMasivo', [MetaUnidadesController::class, 'createBulk']);
+Route::post('/replaceMetaUnidadesMasivo', [MetaUnidadesController::class, 'replaceBulk']);
 Route::put('/updateMetaUnidades', [MetaUnidadesController::class, 'update']);
 Route::post('getListUnidadesMeta', [MetaUnidadesController::class, 'list']);
 Route::get('getMetaUnidades/{meta_unidades_id}', [MetaUnidadesController::class, 'getMetaUnidades']);
@@ -91,6 +101,7 @@ Route::get('getAreas/{clienteID}', [MetaUnidadesController::class, 'getAreasImec
 // Unidades Diarias Routes
 Route::get('/getDailyUnitsOfDay/{date}/{client_id}', [UnidadesDiariasController::class, 'getDailyUnitsOfDay']); //API GROOT
 Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);
+Route::post('/createUnidadesDiariasMasivo', [UnidadesDiariasController::class, 'createBulk']);
 Route::post('/updateUnidadesDiarias', [UnidadesDiariasController::class, 'update']);
 Route::get('/getListUnidadesDiarias/{meta_unidades_id}', [UnidadesDiariasController::class, 'list']);
 Route::get('/getUnidadesDiariaID/{unidades_diaria_id}', [UnidadesDiariasController::class, 'getUnidadesDiariaID']);
@@ -101,6 +112,8 @@ Route::get('/getUnidadesDiariaID/{unidades_diaria_id}', [UnidadesDiariasControll
 Route::post('/saveSurvey', [SurveyController::class, 'setSaveSurvey']);
 Route::get('/listCharges', [SurveyController::class, 'getListCharges']);
 Route::get('/listClients', [SurveyController::class, 'getListClients']);
+Route::get('/getUsersBySurveyClient/{id}', [SurveyController::class, 'getUsersBySurveyClientId']);
+Route::put('/updateSurveyClient/{id}', [SurveyController::class, 'updateSurveyClient']);
 Route::get('/getInformationUser/{username}', [SurveyController::class, 'getInformationUser']);
 
 Route::middleware('auth:sanctum')->group(function () {

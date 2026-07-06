@@ -6,12 +6,60 @@ use DateTime;
 use Illuminate\Http\Request;
 use App\Models\Objetivo;
 use App\Models\Tablero_Sae;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class ObjetivoController extends Controller
 {
+    public function list(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'cliente_endpoint_id' => 'required|integer',
+                'fecha_inicio' => 'nullable|date',
+                'fecha_fin' => 'nullable|date',
+            ]);
+
+            $dateEnd = isset($validatedData['fecha_fin'])
+                ? Carbon::parse($validatedData['fecha_fin'])->endOfDay()
+                : Carbon::today()->endOfDay();
+            $dateStart = isset($validatedData['fecha_inicio'])
+                ? Carbon::parse($validatedData['fecha_inicio'])->startOfDay()
+                : Carbon::today()->subMonth()->startOfDay();
+
+            $objetivos = DB::table('objetivos as o')
+            ->join('tablero_sae as ts', 'ts.tablero_sae_id', '=', 'o.tablero_sae_id')
+            ->join('clientes as c', 'c.id', '=', 'ts.cliente_id')
+            ->select(
+                'o.objetivos_id',
+                'o.fecha',
+                'o.planificada',
+                'o.modificada',
+                'o.plan_armado',
+                'o.calidad',
+                'o.desperfecto_me',
+                'o.desperfecto_pp',
+                'o.created_at',
+                'o.updated_at'
+            )
+            ->where('c.cliente_endpoint_id', '=', $validatedData['cliente_endpoint_id'])
+            ->whereBetween('o.fecha', [$dateStart, $dateEnd])
+            ->whereNull('o.deleted_at')
+            ->whereNull('ts.deleted_at')
+            ->whereNull('c.deleted_at')
+            ->orderBy('o.fecha', 'desc')
+            ->get();
+
+            return response()->json(['data' => $objetivos], 200);
+        } catch (ValidationException $e) {
+            return response()->json(['title' => 'Error de validación.', 'message' => 'Error en los filtros de cumplimiento diario.', 'error' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo al listar el cumplimiento diario.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
     /**
      * Método para guardar objetivos, no permite guardar un objetivo con el mismo día de inserción
      */

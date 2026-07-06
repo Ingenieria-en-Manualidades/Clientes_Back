@@ -30,33 +30,15 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        function decryptAES($encryptedHex, $keyValue)
-{
-    $salt = 'salt'; 
-    $iterations = 100; 
-
-    $ivHex = substr($encryptedHex, 0, 32);
-    $cipherTextHex = substr($encryptedHex, 32); 
-
-    $iv = hex2bin($ivHex);
-    $cipherText = hex2bin($cipherTextHex);
-
-    $key = hash_pbkdf2('sha256', $keyValue, $salt, $iterations, 32, true);
-
-    $decrypted = openssl_decrypt($cipherText, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
-
-    return $decrypted;
-}
-
-
 try {
-    $encryptedHex = $request->input('encrypted_data'); 
-    if (!$encryptedHex) {
-        throw new Exception('Datos cifrados no proporcionados.');
-    }
+    $request->validate([
+        'encrypted_data' => 'required|string',
+    ]);
+
+    $encryptedHex = $request->input('encrypted_data');
     $keyValue = env('KEY_ENCRYPTED'); 
 
-    $decryptedData = decryptAES($encryptedHex, $keyValue);
+    $decryptedData = $this->decryptAES($encryptedHex, $keyValue);
     $credentials = json_decode($decryptedData, true); 
     if (json_last_error() !== JSON_ERROR_NONE) {
         throw new Exception('Error al decodificar los datos desencriptados.');
@@ -65,25 +47,35 @@ try {
     $decryptedUsername = $credentials['username'] ?? null;
     $decryptedPassword = $credentials['password'] ?? null;
 
-    $username = filter_var($decryptedUsername, FILTER_SANITIZE_SPECIAL_CHARS);
-    $password = $decryptedPassword;
+    if (!is_string($decryptedUsername) || !is_string($decryptedPassword) || trim($decryptedUsername) === '' || $decryptedPassword === '') {
+        return response()->json(['title' => 'Datos incompletos', 'message' => 'Usuario y password son obligatorios.'], 422);
+    }
 
-    $credentials = [
-        'name' => $username,
-        'password' => $password
-    ];
+    $username = trim($decryptedUsername);
+    $password = $decryptedPassword;
+    $credentials = ['name' => $username];
+
+    $request->merge(['username' => $username]);
 
     $this->checkTooManyLoginAttempts($request);
 
-    if (!Auth::attempt($credentials)) {
+    $user = User::whereRaw('LOWER(name) = ?', [Str::lower($username)])->first();
+
+    if (!$user || !Hash::check($password, $user->password)) {
         $this->incrementLoginAttempts($request);
         Log::warning('Detalles de inicio de sesión inválidos:', ['name' => $credentials['name']]);
-        return response()->json(['title' => 'Usuario inválido', 'message' => 'Usuario o contraseña incorrectos.'], 422);
+        return response()->json(['title' => 'Credenciales incorrectas', 'message' => 'Usuario o contraseña incorrectos.'], 401);
     }
 
+    Auth::login($user);
     $user = Auth::user();
 
-    $permissions = $user->getAllPermissions()->whereNull('deleted_at')->pluck('name')->values();
+    $permissions = $user->getAllPermissions()
+        ->whereNull('deleted_at')
+        ->pluck('name')
+        ->merge($user->permissions()->whereNull('permissions.deleted_at')->pluck('permissions.name'))
+        ->unique()
+        ->values();
 
     if ($user->activo === 'n') {
         Auth::logout();
@@ -110,6 +102,7 @@ try {
     return response()->json([
         'access_token' => $token,
         'token_type' => 'Bearer',
+        'username' => $user->name,
         'clientes_endpoint_ids' => $clientesEndpointIds,
         'permissions' => $permissions,
         'reset_password' => $user->reset_password,

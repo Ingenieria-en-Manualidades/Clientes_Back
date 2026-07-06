@@ -63,7 +63,7 @@ class UserController extends Controller
         }
 
         try {
-            $nombre = htmlspecialchars($request->nombre, ENT_QUOTES, 'UTF-8');
+            $nombre = mb_strtoupper(trim(htmlspecialchars($request->nombre, ENT_QUOTES, 'UTF-8')));
 
             $user = new User();
             $user->name = $nombre;
@@ -116,7 +116,9 @@ class UserController extends Controller
             'clients.*' => [
                 'integer',
                 Rule::when(
-                    fn () => !in_array("0", (array) $request->input('clients', []), true),
+                    function () use ($request) {
+                        return !in_array("0", (array) $request->input('clients', []), true);
+                    },
                     'exists:clientes,cliente_endpoint_id'
                 ),
             ],
@@ -137,16 +139,19 @@ class UserController extends Controller
             }
         }
 
+        $username = mb_strtoupper(trim($request->username));
+        $creatorUser = mb_strtoupper(trim($request->creator_user));
+
         // 2. Check if a user with the same username already exists.
-        $userByUsername = User::where('name', $request->username)->first();
+        $userByUsername = User::where('name', $username)->first();
         if ($userByUsername) {
-            return response()->json(['title' => 'Nombre de usuario existente.', 'message' => "Ya existe un usuario con el nombre de usuario '{$request->username}'."], 409);
+            return response()->json(['title' => 'Nombre de usuario existente.', 'message' => "Ya existe un usuario con el nombre de usuario '{$username}'."], 409);
         }
 
         DB::beginTransaction();
         try {
             $user = new User();
-            $user->name = $request->username;
+            $user->name = $username;
             $user->email = $request->email;
             $user->password = Hash::make($request->password);
 
@@ -162,7 +167,7 @@ class UserController extends Controller
                 $customerContact->cellphone = $request->cellphone;
                 $customerContact->email = $request->email;
                 $customerContact->user_id = $user->id;
-                $customerContact->username = $request->creator_user;
+                $customerContact->username = $creatorUser;
                 $customerContact->save();
             }
 
@@ -513,7 +518,9 @@ class UserController extends Controller
             'clients.*' => [
                 'integer',
                 Rule::when(
-                    fn () => !in_array("0", (array) $request->input('clients', []), true),
+                    function () use ($request) {
+                        return !in_array("0", (array) $request->input('clients', []), true);
+                    },
                     'exists:clientes,cliente_endpoint_id'
                 ),
             ],
@@ -541,9 +548,12 @@ class UserController extends Controller
             return response()->json(['title' => 'Usuario no encontrado.', 'message' => 'El usuario con el ID proporcionado no existe.'], 404);
         }
 
+        $username = mb_strtoupper(trim($request->username));
+        $creatorUser = mb_strtoupper(trim($request->creator_user));
+
         // Unicidad username/email/empleado_id frente a otros usuarios
-        if ($request->username !== $user->name && User::where('name', $request->username)->where('id', '!=', $user->id)->exists()) {
-            return response()->json(['title' => 'Nombre de usuario existente.', 'message' => "Ya existe un usuario con el nombre de usuario '{$request->username}'."], 409);
+        if ($username !== $user->name && User::where('name', $username)->where('id', '!=', $user->id)->exists()) {
+            return response()->json(['title' => 'Nombre de usuario existente.', 'message' => "Ya existe un usuario con el nombre de usuario '{$username}'."], 409);
         }
 
         if ($request->email !== $user->email && User::where('email', $request->email)->where('id', '!=', $user->id)->exists()) {
@@ -559,7 +569,7 @@ class UserController extends Controller
 
         DB::beginTransaction();
         try {
-            $user->name = $request->username;
+            $user->name = $username;
             $user->email = $request->email;
             if ($request->filled('password') && $request->password !== '*') {
                 $user->password = Hash::make($request->password);
@@ -580,7 +590,7 @@ class UserController extends Controller
                 $customerContact->fullname = $request->fullname;
                 $customerContact->cellphone = $request->cellphone;
                 $customerContact->email = $request->email;
-                $customerContact->username = $request->creator_user;
+                $customerContact->username = $creatorUser;
                 $customerContact->save();
             }
 

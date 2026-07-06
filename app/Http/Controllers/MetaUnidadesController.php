@@ -61,6 +61,153 @@ class MetaUnidadesController extends Controller
         }
     }
 
+    public function createBulk(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'valor' => 'required|integer',
+                'fecha_meta' => 'required|date',
+                'cliente_endpoint_id' => 'required|integer',
+                'area_id' => 'required|integer',
+                'usuario' => 'required|string',
+                'unidades_diarias' => 'required|array|min:1',
+                'unidades_diarias.*.valor' => 'required|integer|min:0',
+                'unidades_diarias.*.fecha_programacion' => 'required|date',
+            ]);
+
+            $clienteID = Cliente::where('cliente_endpoint_id', $validatedData['cliente_endpoint_id'])->first();
+
+            if (!$clienteID) {
+                return response()->json(['title' => 'Error al guardar.', 'message' => 'Cliente no encontrado en la BD.'], 404);
+            }
+
+            $dateMeta = new DateTime($validatedData['fecha_meta']);
+
+            foreach ($validatedData['unidades_diarias'] as $dailyUnit) {
+                $dateDaily = new DateTime($dailyUnit['fecha_programacion']);
+                if ($dateDaily->format('Y-m') !== $dateMeta->format('Y-m')) {
+                    return response()->json(['title' => 'Fechas invalidas.', 'message' => 'Todas las unidades diarias deben pertenecer al mes de la meta.'], 422);
+                }
+            }
+
+            $metaExist = DB::table('meta_unidades as mu')
+            ->join('clientes as c', 'mu.clientes_id', '=', 'c.id')
+            ->where('mu.fecha_meta', 'like', $dateMeta->format('Y') .'-'. $dateMeta->format('m') .'%')
+            ->where('c.cliente_endpoint_id', '=', $validatedData['cliente_endpoint_id'])
+            ->where('mu.area_id_groot', '=', $validatedData['area_id'])
+            ->whereNull('mu.deleted_at')
+            ->first();
+
+            if ($metaExist) {
+                return response()->json([
+                    'title' => 'Unidades existentes.',
+                    'message' => 'Existen unidades programadas para el mes y area ingresados.',
+                    'data' => [
+                        'meta_unidades_id' => $metaExist->meta_unidades_id,
+                        'valor' => $metaExist->valor,
+                    ],
+                ], 409);
+            }
+
+            DB::transaction(function () use ($validatedData, $clienteID) {
+                $objMetaUnidades = new MetaUnidades();
+                $objMetaUnidades->valor = $validatedData['valor'];
+                $objMetaUnidades->fecha_meta = $validatedData['fecha_meta'];
+                $objMetaUnidades->actualizaciones = 1;
+                $objMetaUnidades->clientes_id = $clienteID->id;
+                $objMetaUnidades->usuario = $validatedData['usuario'];
+                $objMetaUnidades->area_id_groot = $validatedData['area_id'];
+                $objMetaUnidades->save();
+
+                foreach ($validatedData['unidades_diarias'] as $dailyUnit) {
+                    $unidades = new UnidadesDiarias();
+                    $unidades->valor = $dailyUnit['valor'];
+                    $unidades->fecha_programacion = $dailyUnit['fecha_programacion'];
+                    $unidades->meta_unidades_id = $objMetaUnidades->meta_unidades_id;
+                    $unidades->usuario = $validatedData['usuario'];
+                    $unidades->save();
+                }
+            });
+
+            return response()->json(['title' => 'Guardado con exito.', 'message' => 'Unidades programadas guardadas con exito.'], 200);
+        } catch (ValidationException $e) {
+            return response()->json(['title' => 'Error de validación.', 'message' => 'Error en las unidades masivas ingresadas.', 'error' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo al guardar las unidades masivas.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function replaceBulk(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'meta_unidades_id' => 'required|integer',
+                'valor' => 'required|integer',
+                'fecha_meta' => 'required|date',
+                'cliente_endpoint_id' => 'required|integer',
+                'area_id' => 'required|integer',
+                'usuario' => 'required|string',
+                'unidades_diarias' => 'required|array|min:1',
+                'unidades_diarias.*.valor' => 'required|integer|min:0',
+                'unidades_diarias.*.fecha_programacion' => 'required|date',
+            ]);
+
+            $clienteID = Cliente::where('cliente_endpoint_id', $validatedData['cliente_endpoint_id'])->first();
+
+            if (!$clienteID) {
+                return response()->json(['title' => 'Error al guardar.', 'message' => 'Cliente no encontrado en la BD.'], 404);
+            }
+
+            $dateMeta = new DateTime($validatedData['fecha_meta']);
+
+            foreach ($validatedData['unidades_diarias'] as $dailyUnit) {
+                $dateDaily = new DateTime($dailyUnit['fecha_programacion']);
+                if ($dateDaily->format('Y-m') !== $dateMeta->format('Y-m')) {
+                    return response()->json(['title' => 'Fechas invalidas.', 'message' => 'Todas las unidades diarias deben pertenecer al mes de la meta.'], 422);
+                }
+            }
+
+            $metaUnidades = MetaUnidades::where('meta_unidades_id', $validatedData['meta_unidades_id'])
+            ->where('clientes_id', $clienteID->id)
+            ->where('area_id_groot', $validatedData['area_id'])
+            ->where('fecha_meta', 'like', $dateMeta->format('Y') .'-'. $dateMeta->format('m') .'%')
+            ->first();
+
+            if (!$metaUnidades) {
+                return response()->json(['title' => 'Registro no encontrado.', 'message' => 'No fue posible encontrar el registro a reemplazar.'], 404);
+            }
+
+            DB::transaction(function () use ($validatedData, $clienteID, $metaUnidades) {
+                UnidadesDiarias::where('meta_unidades_id', $metaUnidades->meta_unidades_id)->delete();
+                $metaUnidades->delete();
+
+                $objMetaUnidades = new MetaUnidades();
+                $objMetaUnidades->valor = $validatedData['valor'];
+                $objMetaUnidades->fecha_meta = $validatedData['fecha_meta'];
+                $objMetaUnidades->actualizaciones = $metaUnidades->actualizaciones + 1;
+                $objMetaUnidades->clientes_id = $clienteID->id;
+                $objMetaUnidades->usuario = $validatedData['usuario'];
+                $objMetaUnidades->area_id_groot = $validatedData['area_id'];
+                $objMetaUnidades->save();
+
+                foreach ($validatedData['unidades_diarias'] as $dailyUnit) {
+                    $unidades = new UnidadesDiarias();
+                    $unidades->valor = $dailyUnit['valor'];
+                    $unidades->fecha_programacion = $dailyUnit['fecha_programacion'];
+                    $unidades->meta_unidades_id = $objMetaUnidades->meta_unidades_id;
+                    $unidades->usuario = $validatedData['usuario'];
+                    $unidades->save();
+                }
+            });
+
+            return response()->json(['title' => 'Registro actualizado.', 'message' => 'El registro mensual fue reemplazado por el ingreso masivo.'], 200);
+        } catch (ValidationException $e) {
+            return response()->json(['title' => 'Error de validación.', 'message' => 'Error en las unidades masivas ingresadas.', 'error' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un fallo al reemplazar las unidades masivas.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function list(Request $request) {
         try {
             $validatedData = $request->validate([

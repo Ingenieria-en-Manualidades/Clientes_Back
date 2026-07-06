@@ -20,9 +20,10 @@ class RolesAndPermissionsSeeder extends Seeder
         Permission::create(['name' => 'asignar permisos', 'guard_name' => 'sanctum']);
         Permission::create(['name' => 'activar/desactivar clientes', 'guard_name' => 'sanctum']);
         Permission::create(['name' => 'Crear Usuarios', 'guard_name' => 'sanctum']);
+        Permission::firstOrCreate(['name' => 'view_clients', 'guard_name' => 'sanctum']);
 
         // Crear rol de administrador y asignar permisos
         $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'sanctum']);
-        $adminRole->givePermissionTo(['ver clientes', 'asignar permisos', 'activar/desactivar clientes', 'Crear Usuarios']);
+        $adminRole->givePermissionTo(['ver clientes', 'asignar permisos', 'activar/desactivar clientes', 'Crear Usuarios', 'view_clients']);
     }
 }
