@@ -14,6 +14,10 @@ class PermissionController extends Controller
             'name' => 'view_clients',
             'guard_name' => 'sanctum',
         ]);
+        Permission::firstOrCreate([
+            'name' => 'view_roles',
+            'guard_name' => 'sanctum',
+        ]);
     }
 
     /**

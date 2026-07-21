@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 
@@ -126,6 +127,145 @@ class RolePermissionController extends Controller
             'roles' => $roles,
             'permissions' => $permissions,
         ]);
+    }
+
+    public function getRolesFrontend()
+    {
+        try {
+            $roles = Role::with('permissions:id,name')
+                ->whereNull('deleted_at')
+                ->orderBy('name', 'asc')
+                ->get()
+                ->map(function ($role) {
+                    return [
+                        'id' => $role->id,
+                        'name' => $role->name,
+                        'permissions' => $role->permissions->map(function ($permission) {
+                            return [
+                                'id' => $permission->id,
+                                'name' => $permission->name,
+                            ];
+                        })->values(),
+                        'permissions_count' => $role->permissions->count(),
+                    ];
+                });
+
+            return response()->json(['data' => $roles], 200);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un error al listar los roles.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getDisabledRolesFrontend()
+    {
+        try {
+            $roles = Role::with('permissions:id,name')
+                ->whereNotNull('deleted_at')
+                ->orderBy('name', 'asc')
+                ->get()
+                ->map(function ($role) {
+                    return [
+                        'id' => $role->id,
+                        'name' => $role->name,
+                        'permissions' => $role->permissions->map(function ($permission) {
+                            return [
+                                'id' => $permission->id,
+                                'name' => $permission->name,
+                            ];
+                        })->values(),
+                        'permissions_count' => $role->permissions->count(),
+                    ];
+                });
+
+            return response()->json(['data' => $roles], 200);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un error al listar los roles inhabilitados.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function storeFrontend(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'name' => 'required|string|max:255|unique:roles,name',
+                'permissions' => 'nullable|array',
+                'permissions.*' => 'integer|exists:permissions,id',
+            ]);
+
+            $role = Role::create([
+                'name' => htmlspecialchars($validatedData['name'], ENT_QUOTES, 'UTF-8'),
+                'guard_name' => 'sanctum',
+            ]);
+
+            $permissionNames = Permission::whereIn('id', $validatedData['permissions'] ?? [])->pluck('name')->toArray();
+            $role->syncPermissions($permissionNames);
+
+            return response()->json(['title' => 'Rol creado.', 'message' => 'Rol creado correctamente.'], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['title' => 'Error de validación.', 'message' => 'Error en la validación del rol.', 'error' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un error al crear el rol.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function updateFrontend(Request $request, int $id)
+    {
+        try {
+            $role = Role::findById($id, 'sanctum');
+
+            $validatedData = $request->validate([
+                'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+                'permissions' => 'nullable|array',
+                'permissions.*' => 'integer|exists:permissions,id',
+            ]);
+
+            $role->update([
+                'name' => htmlspecialchars($validatedData['name'], ENT_QUOTES, 'UTF-8'),
+            ]);
+
+            $permissionNames = Permission::whereIn('id', $validatedData['permissions'] ?? [])->pluck('name')->toArray();
+            $role->syncPermissions($permissionNames);
+
+            return response()->json(['title' => 'Rol actualizado.', 'message' => 'Rol actualizado correctamente.'], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['title' => 'Error de validación.', 'message' => 'Error en la validación del rol.', 'error' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un error al actualizar el rol.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function disableFrontend(int $id)
+    {
+        try {
+            $role = Role::where('id', $id)->whereNull('deleted_at')->firstOrFail();
+
+            DB::table('roles')->where('id', $role->id)->update([
+                'activo' => 'n',
+                'deleted_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return response()->json(['title' => 'Rol inhabilitado.', 'message' => 'Rol inhabilitado correctamente.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un error al inhabilitar el rol.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function restoreFrontend(int $id)
+    {
+        try {
+            $role = Role::where('id', $id)->whereNotNull('deleted_at')->firstOrFail();
+
+            DB::table('roles')->where('id', $role->id)->update([
+                'activo' => 's',
+                'deleted_at' => null,
+                'updated_at' => now(),
+            ]);
+
+            return response()->json(['title' => 'Rol habilitado.', 'message' => 'Rol habilitado correctamente.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un error al habilitar el rol.', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
