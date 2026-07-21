@@ -21,6 +21,11 @@ use App\Http\Controllers\PermissionController;
 class UserController extends Controller
 {
 
+    private function tableExists(string $qualifiedTable): bool
+    {
+        return DB::selectOne('SELECT to_regclass(?) AS table_name', [$qualifiedTable])->table_name !== null;
+    }
+
     /**
      * Muestra una lista de los usuarios, roles y clientes.
      *
@@ -218,17 +223,23 @@ class UserController extends Controller
                 return response()->json(['title' => 'Token no válido.', 'message' => 'Error en la petición al enviar el token incorrecto.'], 401);
             }
 
+            $hasSurveyContacts = $this->tableExists('surveys.customer_contact');
+
             $users = User::withTrashed()
-            ->leftJoin('public.empleado as e', 'e.empleado_id', '=', 'users.empleado_id')
-            ->leftJoin('surveys.customer_contact as cc', 'cc.user_id', '=', 'users.id')
-            ->select(
+            ->leftJoin('public.empleado as e', 'e.empleado_id', '=', 'users.empleado_id');
+
+            if ($hasSurveyContacts) {
+                $users->leftJoin('surveys.customer_contact as cc', 'cc.user_id', '=', 'users.id');
+            }
+
+            $users = $users->select(
                 'users.*',
                 DB::raw("CONCAT(e.nombre, ' ', e.apellido) AS fullname"),
                 'e.nro_documento AS num_document',
                 'e.celular as cellphone',
-                'cc.fullname as fullname_client',
-                'cc.cellphone as cellphone_client',
-                'cc.email as email_client'
+                $hasSurveyContacts ? 'cc.fullname as fullname_client' : DB::raw('NULL::text as fullname_client'),
+                $hasSurveyContacts ? 'cc.cellphone as cellphone_client' : DB::raw('NULL::text as cellphone_client'),
+                $hasSurveyContacts ? 'cc.email as email_client' : DB::raw('NULL::text as email_client')
             )
             ->get();
 
@@ -460,9 +471,12 @@ class UserController extends Controller
                 $infoBasic = DB::table('public.empleado')->select(DB::raw("CONCAT(nombre, ' ', apellido) AS fullname"),'email','celular as cellphone')
                 ->where('empleado_id', $user->empleado_id)->first();
                 $userType = 'employee';
-            } else {
+            } else if ($this->tableExists('surveys.customer_contact')) {
                 $infoBasic = DB::table('surveys.customer_contact')->select('fullname','email','cellphone')
                 ->where('user_id', $user->id)->first();
+                $userType = 'client';
+            } else {
+                $infoBasic = null;
                 $userType = 'client';
             }
 

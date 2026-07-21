@@ -61,6 +61,12 @@ Route::post('/guardarTablero', [Tablero_SaeController::class, 'create']);
 // Permission Routes
 Route::get('/getListPermissions', [PermissionController::class, 'getListPermissions']);
 Route::post('/relacionarUsuarioPermiso', [PermissionController::class, 'guardarUserPermission']);
+Route::get('/getAdminRoles', [RolePermissionController::class, 'getRolesFrontend']);
+Route::get('/getDisabledAdminRoles', [RolePermissionController::class, 'getDisabledRolesFrontend']);
+Route::post('/createRole', [RolePermissionController::class, 'storeFrontend']);
+Route::put('/updateRole/{id}', [RolePermissionController::class, 'updateFrontend']);
+Route::put('/disableRole/{id}', [RolePermissionController::class, 'disableFrontend']);
+Route::put('/restoreRole/{id}', [RolePermissionController::class, 'restoreFrontend']);
 
 ////////////////////////////////////
 // Cliente_user Routes
