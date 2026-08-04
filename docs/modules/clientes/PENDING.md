@@ -9,9 +9,6 @@ Pendientes centralizados del modulo backend `Clientes`.
    - Confirmar si eliminados en `public.cliente` deben desactivar o eliminar en destinos.
    - Confirmar si la llave correcta siempre es `cliente_id`.
    - Confirmar si `hora_extra` debe mapear directo a `surveys.clients.overtime` con formato `HH:MM:SS`.
-   - Hecho: la sincronizacion usa `public.cliente` como fuente.
-   - Hecho: la sincronizacion usa `surveys.clients` como destino de Surveys.
-   - Hecho: la sincronizacion ya no falla si falta una tabla de clientes dentro del esquema `surveys`; en ese caso sincroniza solo `clients.clientes`.
 
 2. Definir comportamiento ante duplicados.
    - Mismo nombre con distinto endpoint.
@@ -21,8 +18,6 @@ Pendientes centralizados del modulo backend `Clientes`.
 ## Relaciones
 
 1. Revisar `ClienteUserController@getClientsByUserId`.
-   - Hecho: se eliminaron credenciales de prueba.
-   - Hecho: se usa `Auth::user()` correctamente.
    - Pendiente: proteger ruta con `auth:sanctum` si aplica.
 
 2. Definir si el backend debe crear clientes en `surveys.clients`.
@@ -32,13 +27,9 @@ Pendientes centralizados del modulo backend `Clientes`.
 
 ## Validacion
 
-1. Hecho: agregar pruebas para `PUT api/updateClient/{id}`.
-2. Hecho: agregar pruebas para `POST api/createClient`.
-3. Hecho: agregar pruebas para `POST api/syncClients`.
-4. Hecho: agregar pruebas para `GET api/getClientsByUserId`.
-5. Agregar pruebas para `PUT api/updateSurveyClient/{id}`.
-6. Validar impactos de cambiar `cliente_endpoint_id` en objetivos, login y seleccion de clientes.
-7. Separar permisos especificos para crear, editar y sincronizar clientes.
+1. Agregar pruebas para `PUT api/updateSurveyClient/{id}`.
+2. Validar impactos de cambiar `cliente_endpoint_id` en objetivos, login y seleccion de clientes.
+3. Separar permisos especificos para crear, editar y sincronizar clientes.
    - `view_clients` ya controla la visibilidad del submodulo.
    - Falta definir permisos de accion si se requiere controlar operaciones internas.
 
