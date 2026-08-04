@@ -1,12 +1,32 @@
-# CONTEXT.md
+# Contexto - Remisiones
 
 ## Objetivo
-Documentar el contexto backend del modulo `remisiones`.
+Gestionar remisiones operativas. No existe todavía una implementación backend identificable.
 
-## Estado actual
-- Estructura documental creada para alinear backend con la organizacion existente en frontend.
-- Pendiente completar rutas, controladores, modelos, migraciones y servicios relacionados.
+## Alcance
+- No existen rutas, controladores, modelos, servicios, migraciones ni contrato API propios.
+
+## Usuarios
+- No hay perfiles ni permisos específicos.
+
+## Tablas y campos clave
+- No existen tablas ni campos propios.
+
+## Archivos relevantes
+- `routes/api.php`
+- `database/migrations/`
+
+## Reglas de negocio
+- No hay reglas implementadas.
+
+## Validaciones
+- No hay validaciones implementadas.
+
+## Dependencias
+- No están definidas.
+
+## Riesgos
+- Crear un contrato incompatible con el sistema fuente o duplicar datos externos.
 
 ## Consideraciones
-- Registrar futuros cambios en `docs/modules/remisiones/BITACORA.md`.
-- Mantener aqui solo contexto tecnico y funcional estable del backend.
+- Se debe identificar fuente, ciclo de vida y relaciones con clientes, usuarios y documentos.

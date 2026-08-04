@@ -1,9 +1,13 @@
-# PENDING.md
+# Pendientes - Usuarios
 
-Pendientes centralizados del modulo `usuarios`.
+## Bugs
+- Aplicar autenticación uniforme, revisar `findOrFail` y exclusión de pivotes eliminados.
 
-## Pendientes
+## Mejoras
+- Sustituir token compartido por capacidades y separar responsabilidades del controlador.
 
-1. Completar contexto backend del modulo.
-2. Identificar controladores, rutas, modelos y tablas relacionadas.
-3. Registrar deuda tecnica o dudas funcionales cuando se intervenga el modulo.
+## Validaciones
+- Unificar unicidad de correo y definir reglas de `employee_id` y cambios de tipo.
+
+## Deuda técnica
+- Agregar pruebas de asociaciones, permisos, soft delete y recuperación; normalizar errores.

@@ -1,9 +1,14 @@
-# PENDING.md
+# Pendientes - Remisiones
 
-Pendientes centralizados del modulo `remisiones`.
+## Dudas funcionales
+- Definir concepto, fuente, estados, responsables y relaciones.
+- Confirmar si se persistirán datos o se actuará como integrador.
 
-## Pendientes
+## Mejoras
+- Diseñar modelo, endpoints y permisos tras aprobar el alcance.
 
-1. Completar contexto backend del modulo.
-2. Identificar controladores, rutas, modelos y tablas relacionadas.
-3. Registrar deuda tecnica o dudas funcionales cuando se intervenga el modulo.
+## Validaciones
+- Definir numeración, unicidad, fechas, estados y anulaciones.
+
+## Deuda técnica
+- Crear migraciones, modelos y pruebas cuando exista implementación.
