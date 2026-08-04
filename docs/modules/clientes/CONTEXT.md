@@ -4,6 +4,18 @@
 
 Documentar la API backend que soporta el submodulo administrativo `Clientes`.
 
+## Alcance
+
+- Administrar clientes, estados y asociaciones con usuarios.
+- Sincronizar `public.cliente` con `clients.clientes` y opcionalmente `surveys.clients`.
+- Consultar y editar datos complementarios de clientes de encuesta.
+
+## Usuarios
+
+- Administradores con `view_administration` y `view_clients`.
+- Usuarios autenticados que consultan sus clientes asociados.
+- Integraciones que usan el token configurado de la aplicación.
+
 ## Modelos Y Tablas
 
 1. `App\Models\Cliente`
@@ -99,6 +111,39 @@ Documentar la API backend que soporta el submodulo administrativo `Clientes`.
   - Usa `Auth::user()` para consultar el usuario autenticado.
   - Devuelve clientes asociados desde `cliente_user`, omitiendo relaciones o clientes con soft delete.
   - Devuelve 404 si no hay usuario autenticado o si el usuario no tiene clientes asociados.
+
+## Archivos relevantes
+
+- `routes/api.php`
+- `app/Http/Controllers/ClienteController.php`
+- `app/Http/Controllers/ClienteUserController.php`
+- `app/Http/Controllers/SurveyController.php`
+- `app/Models/Cliente.php`
+- `app/Models/ClienteUser.php`
+- `app/Models/survey/Clients.php`
+
+## Reglas de negocio
+
+- `cliente_endpoint_id` identifica al cliente frente a sistemas externos.
+- `cliente_user.cliente_id` referencia el `clientes.id` interno.
+- El estado inactivo de la fuente se propaga mediante `activo` y soft delete.
+- `surveys.clients.clients_id` debe alinearse con `public.cliente.cliente_id`.
+
+## Validaciones
+
+- Crear y editar requieren nombre e ID externo entero y único.
+- Las escrituras y sincronización validan el token de aplicación.
+
+## Dependencias
+
+- Esquemas PostgreSQL `clients`, `public` y opcionalmente `surveys`.
+- Módulos de usuarios, encuestas, metas y permisos.
+
+## Riesgos
+
+- Cambiar el ID externo puede romper cruces e integraciones.
+- La coincidencia por nombre puede unir clientes homónimos.
+- Varias rutas no aplican middleware `auth:sanctum`.
 
 ## Consideraciones
 

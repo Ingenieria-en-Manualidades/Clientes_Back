@@ -1,9 +1,13 @@
-# PENDING.md
+# Pendientes - Encuesta
 
-Pendientes centralizados del modulo `encuesta`.
+## Bugs
+- Proteger endpoints, calificar tablas con `surveys` y definir qué encuesta anual retornar.
 
-## Pendientes
+## Mejoras
+- Separar clientes de encuesta y centralizar campañas.
 
-1. Completar contexto backend del modulo.
-2. Identificar controladores, rutas, modelos y tablas relacionadas.
-3. Registrar deuda tecnica o dudas funcionales cuando se intervenga el modulo.
+## Validaciones
+- Validar respuestas anidadas y existencia/estado de cargo, cliente y pregunta.
+
+## Deuda técnica
+- Agregar pruebas de transacción, versionado, respuestas y correo; no exponer excepciones internas.
