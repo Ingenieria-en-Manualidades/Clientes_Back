@@ -58,12 +58,9 @@ Route::post('/actualizarObjetivos', [ObjetivoController::class, 'update']);
 
 // Tablero Routes
 Route::post('/guardarTablero', [Tablero_SaeController::class, 'create']);
-Route::post('/scheduled-detail/preview', [ScheduledDetailController::class, 'previewExcel'])
-    ->name('scheduled-detail.preview');
-Route::post('/scheduled-detail', [ScheduledDetailController::class, 'store'])
-    ->name('scheduled-detail.store');
-Route::get('/scheduled-detail', [ScheduledDetailController::class, 'index'])
-    ->name('scheduled-detail.index');
+Route::post('/scheduled-detail/preview', [ScheduledDetailController::class, 'previewExcel']);
+Route::post('/scheduled-detail', [ScheduledDetailController::class, 'store']);
+Route::get('/scheduled-detail', [ScheduledDetailController::class, 'index']);
 
 // Permission Routes
 Route::get('/getListPermissions', [PermissionController::class, 'getListPermissions']);
