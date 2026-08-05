@@ -59,7 +59,7 @@ Route::post('/actualizarObjetivos', [ObjetivoController::class, 'update']);
 // Tablero Routes
 Route::post('/guardarTablero', [Tablero_SaeController::class, 'create']);
 Route::post('/scheduled-detail/preview', [ScheduledDetailController::class, 'previewExcel']);
-Route::post('/scheduled-detail', [ScheduledDetailController::class, 'store']);
+Route::post('/scheduled-detail/store', [ScheduledDetailController::class, 'store']);
 Route::get('/scheduled-detail', [ScheduledDetailController::class, 'index']);
 
 // Permission Routes
