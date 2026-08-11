@@ -135,6 +135,10 @@ class ScheduledDetailController extends Controller
                     continue;
                 }
 
+                if ($this->isZeroWeeklyTotal($rowValues['total semana'])) {
+                    continue;
+                }
+
                 $validator = Validator::make($rowValues, [
                     'nombre centro' => ['required', 'string'],
                     'sku' => ['required', 'string'],
@@ -269,7 +273,6 @@ class ScheduledDetailController extends Controller
             'replace_existing' => ['sometimes', 'boolean'],
             'values' => ['required', 'array', 'min:1'],
             'values.*.client_id' => ['required', 'integer'],
-            'values.*.activity_id' => ['nullable', 'string', 'max:255'],
             'values.*.sku' => ['required', 'string', 'max:255'],
             'values.*.producto' => ['required', 'string', 'max:255'],
             'values.*.value' => ['required', 'integer'],
@@ -402,7 +405,6 @@ class ScheduledDetailController extends Controller
     {
         return array_map(
             static fn (array $value) => [
-                'activity_id' => $value['activity_id'] ?? null,
                 'client_id' => (int) $value['client_id'],
                 'weekly_total' => (int) $value['value'],
                 'notes' => null,
@@ -439,7 +441,6 @@ class ScheduledDetailController extends Controller
                             'weekly_scheduled_detail.scheduled_detail_id',
                             'weekly_scheduled_detail.sku',
                             'weekly_scheduled_detail.product',
-                            'weekly_scheduled_detail.activity_id',
                             'weekly_scheduled_detail.weekly_total',
                             'weekly_scheduled_detail.username',
                             'c.nombre as client_name',
@@ -462,7 +463,6 @@ class ScheduledDetailController extends Controller
                                 'client_name' => $weeklyScheduledDetail->client_name,
                                 'sku' => $weeklyScheduledDetail->sku,
                                 'product' => $weeklyScheduledDetail->product,
-                                'activity_id' => $weeklyScheduledDetail->activity_id,
                                 'weekly_total' => $weeklyScheduledDetail->weekly_total,
                                 'username' => $weeklyScheduledDetail->username,
                             ])
@@ -646,6 +646,15 @@ class ScheduledDetailController extends Controller
         return collect($row)->every(
             static fn ($value) => $value === null || trim((string) $value) === ''
         );
+    }
+
+    private function isZeroWeeklyTotal(mixed $value): bool
+    {
+        if (is_string($value) && trim($value) === '-') {
+            return true;
+        }
+
+        return is_numeric($value) && (float) $value === 0.0;
     }
 
     private function normalizeStringValue(mixed $value): mixed
