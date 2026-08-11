@@ -15,7 +15,6 @@ class WeeklyScheduledDetail extends Model
     protected $primaryKey = 'weekly_scheduled_detail_id';
 
     protected $fillable = [
-        'activity_id',
         'client_id',
         'weekly_total',
         'notes',
