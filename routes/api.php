@@ -20,6 +20,7 @@ use App\Http\Controllers\UnidadesDiariasController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\PrivacyPolicyController;
 use App\Http\Controllers\ScheduledDetailController;
+use App\Http\Controllers\DetailedAssemblyController;
 
 // Authentication Routes
 Route::post('login', [AuthController::class, 'login']);
@@ -61,6 +62,9 @@ Route::post('/guardarTablero', [Tablero_SaeController::class, 'create']);
 Route::post('/scheduled-detail/preview', [ScheduledDetailController::class, 'previewExcel']);
 Route::post('/scheduled-detail/store', [ScheduledDetailController::class, 'store']);
 Route::get('/scheduled-detail', [ScheduledDetailController::class, 'index']);
+Route::post('/detailed-assembly/preview', [DetailedAssemblyController::class, 'previewExcel']);
+Route::post('/detailed-assembly/store', [DetailedAssemblyController::class, 'store']);
+Route::get('/detailed-assembly', [DetailedAssemblyController::class, 'index']);
 
 // Permission Routes
 Route::get('/getListPermissions', [PermissionController::class, 'getListPermissions']);
