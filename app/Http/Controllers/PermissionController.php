@@ -78,6 +78,28 @@ class PermissionController extends Controller
         }
     }
 
+    public function storeFrontend(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'name' => 'required|string|max:255|unique:permissions,name',
+            ]);
+
+            $name = trim($validatedData['name']);
+
+            Permission::create([
+                'name' => $name,
+                'guard_name' => 'sanctum',
+            ]);
+
+            return response()->json(['title' => 'Permiso creado.', 'message' => 'Permiso creado correctamente.'], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['title' => 'Datos inválidos.', 'message' => 'Verifica el nombre del permiso.', 'error' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['title' => 'Error con el servidor.', 'message' => 'Ha ocurrido un error al crear el permiso.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function guardarUserPermission(Request $request){
         try {
             // Validar los datos entrantes
