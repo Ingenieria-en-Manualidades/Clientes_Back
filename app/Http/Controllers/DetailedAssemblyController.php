@@ -199,7 +199,7 @@ class DetailedAssemblyController extends Controller
                 $rowsWithClient[] = $preparedRow;
             }
 
-            // Búsqueda y validación de activity_id desactivadas temporalmente para probar el guardado.
+            // Búsqueda y validación de activity_id.
             $activitiesByClientAndSku = $this->findActivitiesByClientAndSku(
                 $connection,
                 $rowsWithClient
@@ -237,13 +237,20 @@ class DetailedAssemblyController extends Controller
                     'value' => $rowWithClient['value'],
                 ];
             }
-<div class="
 
+            foreach ($rowsWithClient as $rowWithClient) {
+                $values[] = [
+                    'start_date' => $startDate->toDateString(),
+                    'end_date' => $endDate->toDateString(),
+                    'nombre_cliente' => $rowWithClient['nombre_cliente'],
+                    'client_id' => $rowWithClient['client_id'],
+                    'sku' => $rowWithClient['sku'],
+                    'producto' => $rowWithClient['producto'],
+                    'activity_id' => '',
+                    'value' => $rowWithClient['value'],
+                ];
+            }
 
-
-
-
-"></div>
             if ($validationErrors !== []) {
                 return response()->json([
                     'success' => false,
