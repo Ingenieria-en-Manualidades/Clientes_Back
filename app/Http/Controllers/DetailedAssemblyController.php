@@ -238,18 +238,18 @@ class DetailedAssemblyController extends Controller
                 ];
             }
 
-            foreach ($rowsWithClient as $rowWithClient) {
-                $values[] = [
-                    'start_date' => $startDate->toDateString(),
-                    'end_date' => $endDate->toDateString(),
-                    'nombre_cliente' => $rowWithClient['nombre_cliente'],
-                    'client_id' => $rowWithClient['client_id'],
-                    'sku' => $rowWithClient['sku'],
-                    'producto' => $rowWithClient['producto'],
-                    'activity_id' => '',
-                    'value' => $rowWithClient['value'],
-                ];
-            }
+            // foreach ($rowsWithClient as $rowWithClient) {
+            //     $values[] = [
+            //         'start_date' => $startDate->toDateString(),
+            //         'end_date' => $endDate->toDateString(),
+            //         'nombre_cliente' => $rowWithClient['nombre_cliente'],
+            //         'client_id' => $rowWithClient['client_id'],
+            //         'sku' => $rowWithClient['sku'],
+            //         'producto' => $rowWithClient['producto'],
+            //         'activity_id' => '',
+            //         'value' => $rowWithClient['value'],
+            //     ];
+            // }
 
             if ($validationErrors !== []) {
                 return response()->json([
