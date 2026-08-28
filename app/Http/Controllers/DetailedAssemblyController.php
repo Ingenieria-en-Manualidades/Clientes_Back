@@ -199,7 +199,7 @@ class DetailedAssemblyController extends Controller
                 $rowsWithClient[] = $preparedRow;
             }
 
-            // Búsqueda y validación de activity_id desactivadas temporalmente para probar el guardado.
+            // Búsqueda y validación de activity_id.
             $activitiesByClientAndSku = $this->findActivitiesByClientAndSku(
                 $connection,
                 $rowsWithClient
