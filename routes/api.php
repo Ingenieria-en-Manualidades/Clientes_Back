@@ -19,7 +19,9 @@ use App\Http\Controllers\ClienteUserController;
 use App\Http\Controllers\UnidadesDiariasController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\PrivacyPolicyController;
-use App\Http\Controllers\PulseMetricsController;
+use App\Http\Controllers\ScheduledDetailController;
+use App\Http\Controllers\DetailedAssemblyController;
+use App\Http\Controllers\Admon\DashboardController;
 
 // Authentication Routes
 Route::post('login', [AuthController::class, 'login']);
@@ -136,14 +138,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/policy',        [PrivacyPolicyController::class, 'show']);
     Route::get('/policy/status', [PrivacyPolicyController::class, 'status']);
     Route::post('/policy/accept',[PrivacyPolicyController::class, 'accept']);
-    Route::get('/metrics/dashboard', [PulseMetricsController::class, 'dashboard']);
 });
 
 ////////////////////////////////////
 // User Routes Frontend
-Route::get('/getRoles', [UserController::class, 'getRoles']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/getUsers', [UserController::class, 'getUsers']);
+    Route::get('/getRoles', [UserController::class, 'getRoles']);
     Route::get('/resetUser/{id}', [UserController::class, 'resetUser']);
     Route::post('/createUser', [UserController::class, 'storeFrontend']);
     Route::put('/updateUser/{id}', [UserController::class, 'updateFrontend']);
@@ -151,3 +152,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/getDataUserId/{id}', [UserController::class, 'getInformationUserById']);
     Route::get('/getEmployeesImec/{clients_id}', [UserController::class, 'getEmployeesImecByClientsId']);
 });
+Route::get('/metrics/dashboard', [DashboardController::class, 'metrics'])->middleware('auth:sanctum');
+Route::get('/metrics/monthly', [DashboardController::class, 'monthlyMetrics'])->middleware('auth:sanctum');
+Route::post('/metrics/module-access', [DashboardController::class, 'trackModuleAccess'])->middleware('auth:sanctum');

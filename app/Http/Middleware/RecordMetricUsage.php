@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -34,14 +35,24 @@ class RecordMetricUsage
 
     private function shouldRecord(Request $request): bool
     {
+        $metricRoute = $this->metricRoute('/'.$request->path());
+
         return $request->is('api/*')
             && ! $request->is('api/metrics/*')
-            && $request->user() !== null;
+            && $metricRoute['module'] !== 'Autenticacion'
+            && $metricRoute['module'] !== 'Sin clasificar'
+            && $this->isReportableActivity($metricRoute['action'])
+            && $this->metricUser($request) !== null;
     }
 
     private function record(Request $request, Response $response, float $startedAt): void
     {
-        $user = $request->user();
+        $user = $this->metricUser($request);
+
+        if (! $user) {
+            return;
+        }
+
         $now = now();
         $route = '/'.$request->path();
         $role = $user->roles()->select('roles.id')->first();
@@ -127,71 +138,85 @@ class RecordMetricUsage
             '/api/logout' => ['Autenticacion', 'Cierre de sesion', 'Cerrar sesion'],
             '/api/verificarTokenLogin' => ['Autenticacion', 'Validacion de sesion', 'Validar token'],
             '/api/updatePasswordExpiration' => ['Autenticacion', 'Contrasena', 'Actualizar contrasena'],
-            '/api/policy' => ['Politicas', 'Administracion', 'Ver politica'],
-            '/api/policy/status' => ['Politicas', 'Administracion', 'Consultar estado de politica'],
-            '/api/policy/accept' => ['Politicas', 'Administracion', 'Aceptar politica'],
-            '/api/getUsers' => ['Usuarios', 'Administracion', 'Listar usuarios'],
-            '/api/getRoles' => ['Usuarios', 'Administracion', 'Listar roles de usuario'],
-            '/api/getDataUserId/{id}' => ['Usuarios', 'Administracion', 'Consultar usuario'],
-            '/api/getEmployeesImec/{id}' => ['Usuarios', 'Administracion', 'Listar empleados IMEC'],
-            '/api/createUser' => ['Usuarios', 'Administracion', 'Crear usuario'],
-            '/api/updateUser/{id}' => ['Usuarios', 'Administracion', 'Actualizar usuario'],
-            '/api/setStatusUser/{id}' => ['Usuarios', 'Administracion', 'Cambiar estado de usuario'],
-            '/api/resetUser/{id}' => ['Usuarios', 'Administracion', 'Restablecer usuario'],
-            '/api/getListPermissions' => ['Roles', 'Administracion', 'Listar permisos'],
-            '/api/getAdminRoles' => ['Roles', 'Administracion', 'Listar roles'],
-            '/api/getDisabledAdminRoles' => ['Roles', 'Administracion', 'Listar roles inhabilitados'],
-            '/api/createRole' => ['Roles', 'Administracion', 'Crear rol'],
-            '/api/updateRole/{id}' => ['Roles', 'Administracion', 'Actualizar rol'],
-            '/api/disableRole/{id}' => ['Roles', 'Administracion', 'Inhabilitar rol'],
-            '/api/restoreRole/{id}' => ['Roles', 'Administracion', 'Habilitar rol'],
-            '/api/relacionarUsuarioPermiso' => ['Roles', 'Administracion', 'Asignar permiso a usuario'],
-            '/api/getClients' => ['Clientes', 'Administracion', 'Listar clientes'],
-            '/api/getClientsByIds/{id}' => ['Clientes', 'Administracion', 'Listar clientes por ids'],
-            '/api/getUsersByClient/{id}' => ['Clientes', 'Administracion', 'Listar usuarios por cliente'],
-            '/api/createClient' => ['Clientes', 'Administracion', 'Crear cliente'],
-            '/api/syncClients' => ['Clientes', 'Administracion', 'Sincronizar clientes'],
-            '/api/setStatusClient/{id}' => ['Clientes', 'Administracion', 'Cambiar estado de cliente'],
-            '/api/updateClient/{id}' => ['Clientes', 'Administracion', 'Actualizar cliente'],
+            '/api/policy' => ['Administracion', 'Politicas', 'Ver politica'],
+            '/api/policy/status' => ['Administracion', 'Politicas', 'Consultar estado de politica'],
+            '/api/policy/accept' => ['Administracion', 'Politicas', 'Aceptar politica'],
+            '/api/getUsers' => ['Administracion', 'Usuarios', 'Listar usuarios'],
+            '/api/getRoles' => ['Administracion', 'Usuarios', 'Listar roles de usuario'],
+            '/api/getDataUserId/{id}' => ['Administracion', 'Usuarios', 'Consultar usuario'],
+            '/api/getEmployeesImec/{id}' => ['Administracion', 'Usuarios', 'Listar empleados IMEC'],
+            '/api/createUser' => ['Administracion', 'Usuarios', 'Crear usuario'],
+            '/api/updateUser/{id}' => ['Administracion', 'Usuarios', 'Actualizar usuario'],
+            '/api/setStatusUser/{id}' => ['Administracion', 'Usuarios', 'Cambiar estado de usuario'],
+            '/api/resetUser/{id}' => ['Administracion', 'Usuarios', 'Restablecer usuario'],
+            '/api/getListPermissions' => ['Administracion', 'Roles', 'Listar permisos'],
+            '/api/getAdminRoles' => ['Administracion', 'Roles', 'Listar roles'],
+            '/api/getDisabledAdminRoles' => ['Administracion', 'Roles', 'Listar roles inhabilitados'],
+            '/api/createRole' => ['Administracion', 'Roles', 'Crear rol'],
+            '/api/createPermission' => ['Administracion', 'Roles', 'Crear permiso'],
+            '/api/updateRole/{id}' => ['Administracion', 'Roles', 'Actualizar rol'],
+            '/api/disableRole/{id}' => ['Administracion', 'Roles', 'Inhabilitar rol'],
+            '/api/restoreRole/{id}' => ['Administracion', 'Roles', 'Habilitar rol'],
+            '/api/relacionarUsuarioPermiso' => ['Administracion', 'Roles', 'Asignar permiso a usuario'],
+            '/api/getClients' => ['Administracion', 'Clientes', 'Listar clientes'],
+            '/api/getClientsByIds/{id}' => ['Administracion', 'Clientes', 'Listar clientes por ids'],
+            '/api/getUsersByClient/{id}' => ['Administracion', 'Clientes', 'Listar usuarios por cliente'],
+            '/api/createClient' => ['Administracion', 'Clientes', 'Crear cliente'],
+            '/api/syncClients' => ['Administracion', 'Clientes', 'Sincronizar clientes'],
+            '/api/setStatusClient/{id}' => ['Administracion', 'Clientes', 'Cambiar estado de cliente'],
+            '/api/updateClient/{id}' => ['Administracion', 'Clientes', 'Actualizar cliente'],
+            '/api/metrics/dashboard' => ['Administracion', 'Metricas', 'Consultar metricas'],
+            '/api/metrics/monthly' => ['Administracion', 'Monthly Metrics', 'Consultar metricas mensuales'],
+            '/api/metrics/module-access' => ['Administracion', 'Metricas', 'Registrar acceso a modulo'],
             '/api/saveSurvey' => ['Encuesta', 'Encuesta', 'Guardar encuesta'],
             '/api/listCharges' => ['Encuesta', 'Encuesta', 'Listar cargos'],
             '/api/listClients' => ['Encuesta', 'Encuesta', 'Listar clientes'],
             '/api/getUsersBySurveyClient/{id}' => ['Encuesta', 'Encuesta', 'Listar usuarios por cliente'],
             '/api/updateSurveyClient/{id}' => ['Encuesta', 'Encuesta', 'Actualizar cliente encuesta'],
             '/api/getInformationUser/{id}' => ['Encuesta', 'Encuesta', 'Consultar usuario'],
-            '/api/guardarMeta' => ['Metas', 'Tablero Sae', 'Guardar meta'],
-            '/api/listarMetas' => ['Metas', 'Tablero Sae', 'Listar metas'],
-            '/api/guardarObjetivos' => ['Metas', 'Tablero Sae', 'Guardar objetivo'],
-            '/api/listarObjetivos' => ['Metas', 'Tablero Sae', 'Listar objetivos'],
-            '/api/actualizarObjetivos' => ['Metas', 'Tablero Sae', 'Actualizar objetivo'],
-            '/api/guardarTablero' => ['Metas', 'Tablero Sae', 'Guardar tablero'],
-            '/api/guardarCalidad' => ['Cumplimiento Mensual', 'Tablero Sae', 'Guardar calidad'],
-            '/api/listarCalidades' => ['Cumplimiento Mensual', 'Tablero Sae', 'Listar calidades'],
-            '/api/verificarCalidad' => ['Cumplimiento Mensual', 'Tablero Sae', 'Verificar calidad'],
-            '/api/guardarAccidente' => ['Cumplimiento Mensual', 'Tablero Sae', 'Guardar accidente'],
-            '/api/guardarArchivo' => ['Cumplimiento Mensual', 'Tablero Sae', 'Guardar archivo'],
-            '/api/listarArchivos' => ['Cumplimiento Mensual', 'Tablero Sae', 'Listar archivos'],
-            '/api/descargar-pdf' => ['Cumplimiento Mensual', 'Tablero Sae', 'Descargar PDF'],
-            '/api/deleteFile' => ['Cumplimiento Mensual', 'Tablero Sae', 'Eliminar archivo'],
-            '/api/metaUnidadesExists' => ['Unidades programadas', 'Tablero Sae', 'Verificar unidades programadas'],
-            '/api/createMetaUnidades' => ['Unidades programadas', 'Tablero Sae', 'Crear unidades programadas'],
-            '/api/createMetaUnidadesMasivo' => ['Unidades programadas', 'Tablero Sae', 'Crear unidades masivo'],
-            '/api/replaceMetaUnidadesMasivo' => ['Unidades programadas', 'Tablero Sae', 'Reemplazar unidades masivo'],
-            '/api/updateMetaUnidades' => ['Unidades programadas', 'Tablero Sae', 'Actualizar unidades programadas'],
-            '/api/getListUnidadesMeta' => ['Unidades programadas', 'Tablero Sae', 'Listar unidades programadas'],
-            '/api/getMetaUnidades/{id}' => ['Unidades programadas', 'Tablero Sae', 'Consultar unidades programadas'],
-            '/api/getAreas/{id}' => ['Unidades programadas', 'Tablero Sae', 'Listar areas'],
-            '/api/getDailyUnitsOfDay/{id}/{id}' => ['Cumplimiento Diarios', 'Tablero Sae', 'Consultar unidades del dia'],
-            '/api/createUnidadesDiarias' => ['Cumplimiento Diarios', 'Tablero Sae', 'Crear unidades diarias'],
-            '/api/createUnidadesDiariasMasivo' => ['Cumplimiento Diarios', 'Tablero Sae', 'Crear unidades diarias masivo'],
-            '/api/updateUnidadesDiarias' => ['Cumplimiento Diarios', 'Tablero Sae', 'Actualizar unidades diarias'],
-            '/api/getListUnidadesDiarias/{id}' => ['Cumplimiento Diarios', 'Tablero Sae', 'Listar unidades diarias'],
-            '/api/getUnidadesDiariaID/{id}' => ['Cumplimiento Diarios', 'Tablero Sae', 'Consultar unidad diaria'],
+            '/api/guardarMeta' => ['Tablero Sae', 'Metas', 'Guardar meta'],
+            '/api/listarMetas' => ['Tablero Sae', 'Metas', 'Listar metas'],
+            '/api/guardarObjetivos' => ['Tablero Sae', 'Metas', 'Guardar objetivo'],
+            '/api/listarObjetivos' => ['Tablero Sae', 'Metas', 'Listar objetivos'],
+            '/api/actualizarObjetivos' => ['Tablero Sae', 'Metas', 'Actualizar objetivo'],
+            '/api/guardarTablero' => ['Tablero Sae', 'Metas', 'Guardar tablero'],
+            '/api/guardarCalidad' => ['Tablero Sae', 'Cumplimiento Mensual', 'Guardar calidad'],
+            '/api/listarCalidades' => ['Tablero Sae', 'Cumplimiento Mensual', 'Listar calidades'],
+            '/api/verificarCalidad' => ['Tablero Sae', 'Cumplimiento Mensual', 'Verificar calidad'],
+            '/api/guardarAccidente' => ['Tablero Sae', 'Cumplimiento Mensual', 'Guardar accidente'],
+            '/api/guardarArchivo' => ['Tablero Sae', 'Cumplimiento Mensual', 'Guardar archivo'],
+            '/api/listarArchivos' => ['Tablero Sae', 'Cumplimiento Mensual', 'Listar archivos'],
+            '/api/descargar-pdf' => ['Tablero Sae', 'Cumplimiento Mensual', 'Descargar PDF'],
+            '/api/deleteFile' => ['Tablero Sae', 'Cumplimiento Mensual', 'Eliminar archivo'],
+            '/api/metaUnidadesExists' => ['Tablero Sae', 'Unidades programadas', 'Verificar unidades programadas'],
+            '/api/createMetaUnidades' => ['Tablero Sae', 'Unidades programadas', 'Crear unidades programadas'],
+            '/api/createMetaUnidadesMasivo' => ['Tablero Sae', 'Unidades programadas', 'Crear unidades masivo'],
+            '/api/replaceMetaUnidadesMasivo' => ['Tablero Sae', 'Unidades programadas', 'Reemplazar unidades masivo'],
+            '/api/updateMetaUnidades' => ['Tablero Sae', 'Unidades programadas', 'Actualizar unidades programadas'],
+            '/api/getListUnidadesMeta' => ['Tablero Sae', 'Unidades programadas', 'Listar unidades programadas'],
+            '/api/getMetaUnidades/{id}' => ['Tablero Sae', 'Unidades programadas', 'Consultar unidades programadas'],
+            '/api/getAreas/{id}' => ['Tablero Sae', 'Unidades programadas', 'Listar areas'],
+            '/api/getDailyUnitsOfDay/{id}/{id}' => ['Tablero Sae', 'Cumplimiento Diarios', 'Consultar unidades del dia'],
+            '/api/createUnidadesDiarias' => ['Tablero Sae', 'Cumplimiento Diarios', 'Crear unidades diarias'],
+            '/api/createUnidadesDiariasMasivo' => ['Tablero Sae', 'Cumplimiento Diarios', 'Crear unidades diarias masivo'],
+            '/api/updateUnidadesDiarias' => ['Tablero Sae', 'Cumplimiento Diarios', 'Actualizar unidades diarias'],
+            '/api/getListUnidadesDiarias/{id}' => ['Tablero Sae', 'Cumplimiento Diarios', 'Listar unidades diarias'],
+            '/api/getUnidadesDiariaID/{id}' => ['Tablero Sae', 'Cumplimiento Diarios', 'Consultar unidad diaria'],
         ];
 
         [$module, $submodule, $action] = $routes[$normalizedRoute] ?? ['Sin clasificar', 'Sin clasificar', 'Consultar'];
 
         return compact('module', 'submodule', 'action');
+    }
+
+    private function metricUser(Request $request)
+    {
+        return $request->user() ?? Auth::guard('sanctum')->user();
+    }
+
+    private function isReportableActivity(string $action): bool
+    {
+        return ! Str::startsWith($action, ['Listar', 'Consultar', 'Ver ', 'Verificar']);
     }
 
     private function isCriticalAction(Request $request): bool
