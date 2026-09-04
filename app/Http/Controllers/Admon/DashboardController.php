@@ -12,6 +12,8 @@ use Spatie\Permission\Models\Role;
 
 class DashboardController extends Controller
 {
+    private const METRIC_TIMEZONE = 'America/Bogota';
+
     /**
      * Muestra el dashboard con los contadores de clientes activos, usuarios activos y roles.
      *
@@ -35,7 +37,7 @@ class DashboardController extends Controller
         try {
             $days = (int) $request->query('days', 30);
             $days = max(1, min($days, 365));
-            $fromDate = Carbon::now()->subDays($days - 1)->startOfDay();
+            $fromDate = Carbon::now(self::METRIC_TIMEZONE)->subDays($days - 1)->startOfDay();
 
             if (! Schema::hasTable('metric_usages')) {
                 return response()->json([
@@ -270,8 +272,8 @@ class DashboardController extends Controller
     {
         try {
             if (!Schema::hasTable('metric_usages')) {
-                $fromDate = Carbon::now()->startOfMonth();
-                $toDate = Carbon::now()->endOfDay();
+                $fromDate = Carbon::now(self::METRIC_TIMEZONE)->startOfMonth();
+                $toDate = Carbon::now(self::METRIC_TIMEZONE)->endOfDay();
 
                 return response()->json([
                     'data' => [
@@ -293,8 +295,8 @@ class DashboardController extends Controller
                 ], 200);
             }
 
-            $from = $request->query('from', Carbon::now()->startOfMonth()->toDateString());
-            $to = $request->query('to', Carbon::now()->toDateString());
+            $from = $request->query('from', Carbon::now(self::METRIC_TIMEZONE)->startOfMonth()->toDateString());
+            $to = $request->query('to', Carbon::now(self::METRIC_TIMEZONE)->toDateString());
 
             if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
                 return response()->json([
@@ -303,8 +305,8 @@ class DashboardController extends Controller
                 ], 422);
             }
 
-            $fromDate = Carbon::createFromFormat('Y-m-d', $from)->startOfDay();
-            $toDate = Carbon::createFromFormat('Y-m-d', $to)->endOfDay();
+            $fromDate = Carbon::createFromFormat('Y-m-d', $from, self::METRIC_TIMEZONE)->startOfDay();
+            $toDate = Carbon::createFromFormat('Y-m-d', $to, self::METRIC_TIMEZONE)->endOfDay();
 
             if ($fromDate->gt($toDate)) {
                 return response()->json([
@@ -316,33 +318,62 @@ class DashboardController extends Controller
             $normalizedModule = "case when mu.submodule = 'Tablero Sae' and mu.module in ('Metas', 'Cumplimiento Mensual', 'Unidades programadas', 'Cumplimiento Diarios') then 'Tablero Sae' when mu.submodule = 'Administracion' and mu.module in ('Usuarios', 'Roles', 'Clientes', 'Politicas') then 'Administracion' else mu.module end";
             $normalizedSubmodule = "case when mu.submodule = 'Tablero Sae' and mu.module in ('Metas', 'Cumplimiento Mensual', 'Unidades programadas', 'Cumplimiento Diarios') then mu.module when mu.submodule = 'Administracion' and mu.module in ('Usuarios', 'Roles', 'Clientes', 'Politicas') then mu.module else mu.submodule end";
 
-            $logs = DB::table('metric_usages as mu')
-                ->join('users as u', 'u.id', '=', 'mu.user_id')
-                ->leftJoin('public.empleado as e', 'e.empleado_id', '=', 'u.empleado_id')
-                ->leftJoin('clientes as c', 'c.id', '=', 'mu.cliente_id')
-                ->whereBetween('mu.date', [$fromDate->toDateString(), $toDate->toDateString()])
-                ->where('mu.module', '!=', 'Autenticacion')
-                ->where('u.activo', 's')
-                ->whereNull('u.deleted_at')
-                ->select(
-                    'e.empleado_id as user_id',
-                    'u.name as user',
-                    DB::raw("coalesce(nullif(trim(concat(coalesce(e.nombre, ''), ' ', coalesce(e.apellido, ''))), ''), u.name) as user_name"),
-                    'e.nro_documento as document_number',
-                    DB::raw("coalesce(c.nombre, 'Sin cliente') as client"),
-                    DB::raw($normalizedModule.' as module'),
-                    DB::raw($normalizedSubmodule.' as submodule'),
-                    DB::raw("string_agg(distinct mu.action, ', ' order by mu.action) as action"),
-                    DB::raw("string_agg(distinct mu.method, ', ' order by mu.method) as method"),
-                    DB::raw("string_agg(distinct mu.route, ', ' order by mu.route) as route"),
-                    DB::raw('sum(mu.requests_count) as accesses')
-                )
-                ->groupBy('e.empleado_id', 'e.nombre', 'e.apellido', 'e.nro_documento', 'u.name', 'c.id', 'c.nombre')
-                ->groupByRaw($normalizedModule)
-                ->groupByRaw($normalizedSubmodule)
-                ->orderByDesc('accesses')
-                ->orderBy('u.name')
-                ->get();
+            if (Schema::hasTable('metric_usage_events')) {
+                $logs = DB::table('metric_usage_events as mu')
+                    ->join('users as u', 'u.id', '=', 'mu.user_id')
+                    ->leftJoin('public.empleado as e', 'e.empleado_id', '=', 'u.empleado_id')
+                    ->leftJoin('clientes as c', 'c.id', '=', 'mu.cliente_id')
+                    ->whereBetween('mu.date', [$fromDate->toDateString(), $toDate->toDateString()])
+                    ->where('mu.module', '!=', 'Autenticacion')
+                    ->where('u.activo', 's')
+                    ->whereNull('u.deleted_at')
+                    ->select(
+                        'e.empleado_id as user_id',
+                        'u.name as user',
+                        DB::raw("coalesce(nullif(trim(concat(coalesce(e.nombre, ''), ' ', coalesce(e.apellido, ''))), ''), u.name) as user_name"),
+                        'e.nro_documento as document_number',
+                        DB::raw("coalesce(c.nombre, 'Sin cliente') as client"),
+                        DB::raw($normalizedModule.' as module'),
+                        DB::raw($normalizedSubmodule.' as submodule'),
+                        'mu.action',
+                        'mu.method',
+                        'mu.route',
+                        'mu.fecha_registro',
+                        DB::raw('1 as accesses')
+                    )
+                    ->orderByDesc('mu.fecha_registro')
+                    ->orderBy('u.name')
+                    ->get();
+            } else {
+                $logs = DB::table('metric_usages as mu')
+                    ->join('users as u', 'u.id', '=', 'mu.user_id')
+                    ->leftJoin('public.empleado as e', 'e.empleado_id', '=', 'u.empleado_id')
+                    ->leftJoin('clientes as c', 'c.id', '=', 'mu.cliente_id')
+                    ->whereBetween('mu.date', [$fromDate->toDateString(), $toDate->toDateString()])
+                    ->where('mu.module', '!=', 'Autenticacion')
+                    ->where('u.activo', 's')
+                    ->whereNull('u.deleted_at')
+                    ->select(
+                        'e.empleado_id as user_id',
+                        'u.name as user',
+                        DB::raw("coalesce(nullif(trim(concat(coalesce(e.nombre, ''), ' ', coalesce(e.apellido, ''))), ''), u.name) as user_name"),
+                        'e.nro_documento as document_number',
+                        DB::raw("coalesce(c.nombre, 'Sin cliente') as client"),
+                        DB::raw($normalizedModule.' as module'),
+                        DB::raw($normalizedSubmodule.' as submodule'),
+                        DB::raw("string_agg(distinct mu.action, ', ' order by mu.action) as action"),
+                        DB::raw("string_agg(distinct mu.method, ', ' order by mu.method) as method"),
+                        DB::raw("string_agg(distinct mu.route, ', ' order by mu.route) as route"),
+                        DB::raw('sum(mu.requests_count) as accesses'),
+                        DB::raw('max(mu.last_activity_at) as fecha_registro')
+                    )
+                    ->groupBy('e.empleado_id', 'e.nombre', 'e.apellido', 'e.nro_documento', 'u.name', 'c.id', 'c.nombre')
+                    ->groupByRaw($normalizedModule)
+                    ->groupByRaw($normalizedSubmodule)
+                    ->orderByDesc('accesses')
+                    ->orderBy('u.name')
+                    ->get();
+            }
 
             $totalAccesses = $logs->sum('accesses');
 
@@ -357,6 +388,7 @@ class DashboardController extends Controller
                 'action' => $row->action,
                 'method' => $row->method,
                 'route' => $row->route,
+                'fecha_registro' => $row->fecha_registro,
                 'accesses' => (int) $row->accesses,
                 'percentage' => $totalAccesses > 0 ? round(((int) $row->accesses / $totalAccesses) * 100, 2) : 0,
             ]);
