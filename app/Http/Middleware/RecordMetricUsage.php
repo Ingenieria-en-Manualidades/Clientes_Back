@@ -13,6 +13,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RecordMetricUsage
 {
+    private const METRIC_TIMEZONE = 'America/Bogota';
+
     public function handle(Request $request, Closure $next): Response
     {
         $startedAt = microtime(true);
@@ -53,12 +55,16 @@ class RecordMetricUsage
             return;
         }
 
-        $now = now();
+        $now = now(self::METRIC_TIMEZONE);
         $route = '/'.$request->path();
         $role = $user->roles()->select('roles.id')->first();
         $clienteId = $this->clienteId($request, $user->id);
         $duration = (microtime(true) - $startedAt) * 1000;
         $metricRoute = $this->metricRoute($route);
+        $statusCode = $response->getStatusCode();
+        $isError = $statusCode >= 400;
+        $isSlow = $duration >= 1000;
+        $isCritical = $this->isCriticalAction($request);
 
         $attributes = [
             'date' => $now->toDateString(),
@@ -69,16 +75,30 @@ class RecordMetricUsage
             'module' => $metricRoute['module'],
             'submodule' => $metricRoute['submodule'],
             'method' => $request->method(),
-            'route' => $this->normalizeRoute($route),
+                'route' => $this->normalizeRoute($route),
         ];
+
+        if (Schema::hasTable('metric_usage_events')) {
+            DB::table('metric_usage_events')->insert($attributes + [
+                'fecha_registro' => $now,
+                'action' => $metricRoute['action'],
+                'status_code' => $statusCode,
+                'duration_ms' => (int) round($duration),
+                'is_error' => $isError,
+                'is_slow' => $isSlow,
+                'is_critical' => $isCritical,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
 
         DB::table('metric_usages')->upsert([
             $attributes + [
                 'requests_count' => 1,
-                'errors_count' => $response->getStatusCode() >= 400 ? 1 : 0,
-                'slow_requests_count' => $duration >= 1000 ? 1 : 0,
+                'errors_count' => $isError ? 1 : 0,
+                'slow_requests_count' => $isSlow ? 1 : 0,
                 'sessions_count' => $request->is('api/login') ? 1 : 0,
-                'critical_actions_count' => $this->isCriticalAction($request) ? 1 : 0,
+                'critical_actions_count' => $isCritical ? 1 : 0,
                 'action' => $metricRoute['action'],
                 'last_activity_at' => $now,
                 'created_at' => $now,
@@ -86,10 +106,10 @@ class RecordMetricUsage
             ],
         ], ['date', 'hour', 'user_id', 'cliente_id', 'role_id', 'module', 'submodule', 'method', 'route'], [
             'requests_count' => DB::raw('metric_usages.requests_count + 1'),
-            'errors_count' => DB::raw('metric_usages.errors_count + '.($response->getStatusCode() >= 400 ? 1 : 0)),
-            'slow_requests_count' => DB::raw('metric_usages.slow_requests_count + '.($duration >= 1000 ? 1 : 0)),
+            'errors_count' => DB::raw('metric_usages.errors_count + '.($isError ? 1 : 0)),
+            'slow_requests_count' => DB::raw('metric_usages.slow_requests_count + '.($isSlow ? 1 : 0)),
             'sessions_count' => DB::raw('metric_usages.sessions_count + '.($request->is('api/login') ? 1 : 0)),
-            'critical_actions_count' => DB::raw('metric_usages.critical_actions_count + '.($this->isCriticalAction($request) ? 1 : 0)),
+            'critical_actions_count' => DB::raw('metric_usages.critical_actions_count + '.($isCritical ? 1 : 0)),
             'action' => $metricRoute['action'],
             'last_activity_at' => $now,
             'updated_at' => $now,
