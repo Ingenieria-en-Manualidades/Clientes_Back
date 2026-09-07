@@ -100,15 +100,6 @@ class UserController extends Controller
      */
     public function storeFrontend(Request $request)
     {
-        $token = $request->header(config('app.type_key_app_clients'));
-
-        $expectedToken = config('app.api_key_app_clients'); // Token predefinido
-
-        // Check if the token in the request matches the predefined token.
-        if ($token !== $expectedToken) {
-            return response()->json(['success' => 'error', 'title' => 'Token no válido', 'message' => 'Error en la petición al enviar el token incorrecto'], 401);
-        }
-        
         $validator = Validator::make($request->all(), [
             'userType' => 'required|string|in:employee,client',
             'employee_id' => 'nullable|string',
@@ -213,16 +204,6 @@ class UserController extends Controller
     public function getUsers(Request $request) 
     {
         try {
-            // Get the token from the 'Authorization' header.
-            $token = $request->header(config('app.type_key_app_clients'));
-
-            $expectedToken = config('app.api_key_app_clients'); // Token predefinido
-
-            // Check if the token in the request matches the predefined token.
-            if ($token !== $expectedToken) {
-                return response()->json(['title' => 'Token no válido.', 'message' => 'Error en la petición al enviar el token incorrecto.'], 401);
-            }
-
             $hasSurveyContacts = $this->tableExists('surveys.customer_contact');
 
             $users = User::withTrashed()
@@ -418,15 +399,6 @@ class UserController extends Controller
     public function getEmployeesImecByClientsId(int $clients_id, Request $request)
     {
         try {
-            $token = $request->header(config('app.type_key_app_clients'));
-
-            $expectedToken = config('app.api_key_app_clients'); // Token predefinido
-
-            // Check if the token in the request matches the predefined token.
-            if ($token !== $expectedToken) {
-                return response()->json(['success' => 'error', 'title' => 'Token no válido', 'message' => 'Error en la petición al enviar el token incorrecto'], 401);
-            }
-
             $employees = DB::table('public.empleado as e')
             ->join('public.contrato as c', 'c.empleado_id', '=', 'e.empleado_id')
             ->select(
@@ -453,15 +425,6 @@ class UserController extends Controller
     public function getInformationUserById(int $id, Request $request)
     {
         try {
-            // Get the token from the 'Authorization' header.
-            $token = $request->header(config('app.type_key_app_clients'));
-            $expectedToken = config('app.api_key_app_clients'); // Token predefinido
-
-            // Check if the token in the request matches the predefined token.
-            if ($token !== $expectedToken) {
-                return response()->json(['title' => 'Token no válido.', 'message' => 'Error en la petición al enviar el token incorrecto.'], 401);
-            }
-
             $user = User::findOrFail($id);
             if (!$user) {
                 return response()->json(['title' => 'Usuario no encontrado.', 'message' => 'El usuario con el ID proporcionado no existe.'], 404);
@@ -543,15 +506,6 @@ class UserController extends Controller
             'permissions.*' => 'exists:permissions,id',
             'creator_user' => 'required|string|max:255',
         ]);
-
-        // Get the token from the 'Authorization' header.
-        $token = $request->header(config('app.type_key_app_clients'));
-        $expectedToken = config('app.api_key_app_clients'); // Token predefinido
-
-        // Check if the token in the request matches the predefined token.
-        if ($token !== $expectedToken) {
-            return response()->json(['title' => 'Token no válido.', 'message' => 'Error en la petición al enviar el token incorrecto.'], 401);
-        }
 
         if ($validator->fails()) {
             return response()->json(['title' => 'Error de validación.', 'message' => $validator->errors(), 'error' => $validator->errors()], 422);
@@ -641,15 +595,6 @@ class UserController extends Controller
     public function setStatusUser (int $id, Request $request)
     {
         try {
-            // Get the token from the 'Authorization' header.
-            $token = $request->header(config('app.type_key_app_clients'));
-            $expectedToken = config('app.api_key_app_clients'); // Token predefinido
-
-            // Check if the token in the request matches the predefined token.
-            if ($token !== $expectedToken) {
-                return response()->json(['title' => 'Token no válido.', 'message' => 'Error en la petición al enviar el token incorrecto.'], 401);
-            }
-
             $user = User::withTrashed()->findOrFail($id);
 
             if (!$user) {
