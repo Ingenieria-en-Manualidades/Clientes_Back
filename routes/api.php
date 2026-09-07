@@ -21,6 +21,7 @@ use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\PrivacyPolicyController;
 use App\Http\Controllers\ScheduledDetailController;
 use App\Http\Controllers\DetailedAssemblyController;
+use App\Http\Controllers\Admon\DashboardController;
 
 // Authentication Routes
 Route::post('login', [AuthController::class, 'login']);
@@ -41,21 +42,27 @@ Route::post('/updatePassword', [UserController::class, 'updatePassword']);
 Route::post('/updatePasswordExpiration', [AuthController::class, 'updatePassword'])->middleware('auth:sanctum');
 
 // Meta Routes
-Route::post('/guardarMeta', [MetaController::class, 'create']);
-Route::post('/listarMetas', [MetaController::class, 'list']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/guardarMeta', [MetaController::class, 'create']);
+    Route::post('/listarMetas', [MetaController::class, 'list']);
+});
 
-// Calidad Routes
-Route::post('/guardarCalidad', [CalidadController::class, 'create']);
-Route::post('/listarCalidades', [CalidadController::class, 'list']);
-Route::post('/verificarCalidad', [CalidadController::class, 'verificarValores']);
+Route::middleware('auth:sanctum')->group(function () {
+    // Calidad Routes
+    Route::post('/guardarCalidad', [CalidadController::class, 'create']);
+    Route::post('/listarCalidades', [CalidadController::class, 'list']);
+    Route::post('/verificarCalidad', [CalidadController::class, 'verificarValores']);
 
-// Accidentes Routes
-Route::post('/guardarAccidente', [AccidentesController::class, 'create']);
+    // Accidentes Routes
+    Route::post('/guardarAccidente', [AccidentesController::class, 'create']);
+});
 
 // Objetivos Routes
-Route::post('/guardarObjetivos', [ObjetivoController::class, 'create']);
-Route::post('/listarObjetivos', [ObjetivoController::class, 'list']);
-Route::post('/actualizarObjetivos', [ObjetivoController::class, 'update']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/guardarObjetivos', [ObjetivoController::class, 'create']);
+    Route::post('/listarObjetivos', [ObjetivoController::class, 'list']);
+    Route::post('/actualizarObjetivos', [ObjetivoController::class, 'update']);
+});
 
 // Tablero Routes
 Route::post('/guardarTablero', [Tablero_SaeController::class, 'create']);
@@ -68,6 +75,7 @@ Route::get('/detailed-assembly', [DetailedAssemblyController::class, 'index']);
 
 // Permission Routes
 Route::get('/getListPermissions', [PermissionController::class, 'getListPermissions']);
+Route::post('/createPermission', [PermissionController::class, 'storeFrontend'])->middleware('auth:sanctum');
 Route::post('/relacionarUsuarioPermiso', [PermissionController::class, 'guardarUserPermission']);
 Route::get('/getAdminRoles', [RolePermissionController::class, 'getRolesFrontend']);
 Route::get('/getDisabledAdminRoles', [RolePermissionController::class, 'getDisabledRolesFrontend']);
@@ -92,34 +100,36 @@ Route::put('/setStatusClient/{id}', [ClienteController::class, 'setStatusClient'
 Route::put('/updateClient/{id}', [ClienteController::class, 'updateClient']);
 //-----------------------------------
 
-// File Routes
-// Route::get('/createFile', [CalidadController::class, 'createFile']);
-Route::post('/guardarArchivo', [FileController::class, 'saveFileCalidad']);
-Route::post('/listarArchivos', [FileController::class, 'store']);
-Route::post('/descargar-pdf', [FileController::class, 'downloadFile']);
-Route::post('/deleteFile', [FileController::class, 'delete']);
+Route::middleware('auth:sanctum')->group(function () {
+    // File Routes
+    // Route::get('/createFile', [CalidadController::class, 'createFile']);
+    Route::post('/guardarArchivo', [FileController::class, 'saveFileCalidad']);
+    Route::post('/listarArchivos', [FileController::class, 'store']);
+    Route::post('/descargar-pdf', [FileController::class, 'downloadFile']);
+    Route::post('/deleteFile', [FileController::class, 'delete']);
 
-////////////////////////////////////
-// Unidades Mensuales Routes
-Route::post('/metaUnidadesExists', [MetaUnidadesController::class, 'exists']);
-Route::post('/createMetaUnidades', [MetaUnidadesController::class, 'create']);
-Route::post('/createMetaUnidadesMasivo', [MetaUnidadesController::class, 'createBulk']);
-Route::post('/replaceMetaUnidadesMasivo', [MetaUnidadesController::class, 'replaceBulk']);
-Route::put('/updateMetaUnidades', [MetaUnidadesController::class, 'update']);
-Route::post('getListUnidadesMeta', [MetaUnidadesController::class, 'list']);
-Route::get('getMetaUnidades/{meta_unidades_id}', [MetaUnidadesController::class, 'getMetaUnidades']);
-Route::get('getAreas/{clienteID}', [MetaUnidadesController::class, 'getAreasImec']);
-//-----------------------------------
+    ////////////////////////////////////
+    // Unidades Mensuales Routes
+    Route::post('/metaUnidadesExists', [MetaUnidadesController::class, 'exists']);
+    Route::post('/createMetaUnidades', [MetaUnidadesController::class, 'create']);
+    Route::post('/createMetaUnidadesMasivo', [MetaUnidadesController::class, 'createBulk']);
+    Route::post('/replaceMetaUnidadesMasivo', [MetaUnidadesController::class, 'replaceBulk']);
+    Route::put('/updateMetaUnidades', [MetaUnidadesController::class, 'update']);
+    Route::post('getListUnidadesMeta', [MetaUnidadesController::class, 'list']);
+    Route::get('getMetaUnidades/{meta_unidades_id}', [MetaUnidadesController::class, 'getMetaUnidades']);
+    Route::get('getAreas/{clienteID}', [MetaUnidadesController::class, 'getAreasImec']);
+    //-----------------------------------
 
-////////////////////////////////////
-// Unidades Diarias Routes
-Route::get('/getDailyUnitsOfDay/{date}/{client_id}', [UnidadesDiariasController::class, 'getDailyUnitsOfDay']); //API GROOT
-Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);
-Route::post('/createUnidadesDiariasMasivo', [UnidadesDiariasController::class, 'createBulk']);
-Route::post('/updateUnidadesDiarias', [UnidadesDiariasController::class, 'update']);
-Route::get('/getListUnidadesDiarias/{meta_unidades_id}', [UnidadesDiariasController::class, 'list']);
-Route::get('/getUnidadesDiariaID/{unidades_diaria_id}', [UnidadesDiariasController::class, 'getUnidadesDiariaID']);
-//-----------------------------------
+    ////////////////////////////////////
+    // Unidades Diarias Routes
+    Route::get('/getDailyUnitsOfDay/{date}/{client_id}', [UnidadesDiariasController::class, 'getDailyUnitsOfDay']); //API GROOT
+    Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);
+    Route::post('/createUnidadesDiariasMasivo', [UnidadesDiariasController::class, 'createBulk']);
+    Route::post('/updateUnidadesDiarias', [UnidadesDiariasController::class, 'update']);
+    Route::get('/getListUnidadesDiarias/{meta_unidades_id}', [UnidadesDiariasController::class, 'list']);
+    Route::get('/getUnidadesDiariaID/{unidades_diaria_id}', [UnidadesDiariasController::class, 'getUnidadesDiariaID']);
+    //-----------------------------------
+});
 
 ////////////////////////////////////
 // Survey Routes
@@ -138,11 +148,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
 ////////////////////////////////////
 // User Routes Frontend
-Route::get('/getUsers', [UserController::class, 'getUsers']);
-Route::get('/getRoles', [UserController::class, 'getRoles']);
-Route::get('/resetUser/{id}', [UserController::class, 'resetUser']);
-Route::post('/createUser', [UserController::class, 'storeFrontend']);
-Route::put('/updateUser/{id}', [UserController::class, 'updateFrontend']);
-Route::put('/setStatusUser/{id}', [UserController::class, 'setStatusUser']);
-Route::get('/getDataUserId/{id}', [UserController::class, 'getInformationUserById']);
-Route::get('/getEmployeesImec/{clients_id}', [UserController::class, 'getEmployeesImecByClientsId']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/getUsers', [UserController::class, 'getUsers']);
+    Route::get('/getRoles', [UserController::class, 'getRoles']);
+    Route::get('/resetUser/{id}', [UserController::class, 'resetUser']);
+    Route::post('/createUser', [UserController::class, 'storeFrontend']);
+    Route::put('/updateUser/{id}', [UserController::class, 'updateFrontend']);
+    Route::put('/setStatusUser/{id}', [UserController::class, 'setStatusUser']);
+    Route::get('/getDataUserId/{id}', [UserController::class, 'getInformationUserById']);
+    Route::get('/getEmployeesImec/{clients_id}', [UserController::class, 'getEmployeesImecByClientsId']);
+});
+Route::get('/metrics/dashboard', [DashboardController::class, 'metrics'])->middleware('auth:sanctum');
+Route::get('/metrics/monthly', [DashboardController::class, 'monthlyMetrics'])->middleware('auth:sanctum');
+Route::post('/metrics/module-access', [DashboardController::class, 'trackModuleAccess'])->middleware('auth:sanctum');
