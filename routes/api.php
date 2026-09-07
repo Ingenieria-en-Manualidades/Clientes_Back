@@ -122,7 +122,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     ////////////////////////////////////
     // Unidades Diarias Routes
-    Route::get('/getDailyUnitsOfDay/{date}/{client_id}', [UnidadesDiariasController::class, 'getDailyUnitsOfDay']); //API GROOT
     Route::post('/createUnidadesDiarias', [UnidadesDiariasController::class, 'create']);
     Route::post('/createUnidadesDiariasMasivo', [UnidadesDiariasController::class, 'createBulk']);
     Route::post('/updateUnidadesDiarias', [UnidadesDiariasController::class, 'update']);
@@ -161,3 +160,4 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/metrics/dashboard', [DashboardController::class, 'metrics'])->middleware('auth:sanctum');
 Route::get('/metrics/monthly', [DashboardController::class, 'monthlyMetrics'])->middleware('auth:sanctum');
 Route::post('/metrics/module-access', [DashboardController::class, 'trackModuleAccess'])->middleware('auth:sanctum');
+Route::get('/getDailyUnitsOfDay/{date}/{client_id}', [UnidadesDiariasController::class, 'getDailyUnitsOfDay']); //API GROOT
