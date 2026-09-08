@@ -63,7 +63,7 @@ class RecordMetricUsage
         $metricRoute = $this->metricRoute($route);
         $statusCode = $response->getStatusCode();
         $isError = $statusCode >= 400;
-        $isSlow = $duration >= 1000;
+        $isSlow = $duration > 10000;
         $isCritical = $this->isCriticalAction($request);
 
         $attributes = [
@@ -158,9 +158,9 @@ class RecordMetricUsage
             '/api/logout' => ['Autenticacion', 'Cierre de sesion', 'Cerrar sesion'],
             '/api/verificarTokenLogin' => ['Autenticacion', 'Validacion de sesion', 'Validar token'],
             '/api/updatePasswordExpiration' => ['Autenticacion', 'Contrasena', 'Actualizar contrasena'],
-            '/api/policy' => ['Administracion', 'Politicas', 'Ver politica'],
-            '/api/policy/status' => ['Administracion', 'Politicas', 'Consultar estado de politica'],
-            '/api/policy/accept' => ['Administracion', 'Politicas', 'Aceptar politica'],
+            '/api/policy' => ['Autenticacion', 'Politicas', 'Ver politica'],
+            '/api/policy/status' => ['Autenticacion', 'Politicas', 'Consultar estado de politica'],
+            '/api/policy/accept' => ['Autenticacion', 'Politicas', 'Aceptar politica'],
             '/api/getUsers' => ['Administracion', 'Usuarios', 'Listar usuarios'],
             '/api/getRoles' => ['Administracion', 'Usuarios', 'Listar roles de usuario'],
             '/api/getDataUserId/{id}' => ['Administracion', 'Usuarios', 'Consultar usuario'],
