@@ -257,6 +257,40 @@ class DashboardController extends Controller
                 'slow_requests' => [],
                 'critical_actions' => [],
             ];
+            $aggregateTechnicalDetails = function (string $countColumn) use ($base, $normalizedModule, $normalizedSubmodule) {
+                return (clone $base)
+                    ->leftJoin('clientes as c', 'c.id', '=', 'mu.cliente_id')
+                    ->where($countColumn, '>', 0)
+                    ->selectRaw('max(mu.last_activity_at) as fecha_registro')
+                    ->selectRaw("'Resumen agregado' as user")
+                    ->selectRaw("coalesce(c.nombre, 'Sin cliente') as client")
+                    ->selectRaw($normalizedModule.' as module')
+                    ->selectRaw($normalizedSubmodule.' as submodule')
+                    ->selectRaw('max(mu.action) as action')
+                    ->addSelect('mu.method', 'mu.route')
+                    ->selectRaw('null as status_code')
+                    ->selectRaw('0 as duration_ms')
+                    ->selectRaw('sum('.$countColumn.') as total')
+                    ->groupBy('c.id', 'c.nombre', 'mu.method', 'mu.route')
+                    ->groupByRaw($normalizedModule)
+                    ->groupByRaw($normalizedSubmodule)
+                    ->orderByDesc('fecha_registro')
+                    ->take(50)
+                    ->get()
+                    ->map(fn ($row) => [
+                        'fecha_registro' => $row->fecha_registro,
+                        'user' => $row->user,
+                        'client' => $row->client,
+                        'module' => $row->module,
+                        'submodule' => $row->submodule,
+                        'action' => $row->action.' ('.$row->total.')',
+                        'method' => $row->method,
+                        'route' => $row->route,
+                        'status_code' => null,
+                        'duration_ms' => null,
+                        'detail_type' => 'aggregate',
+                    ]);
+            };
 
             if (Schema::hasTable('metric_usage_events')) {
                 $eventsBase = DB::table('metric_usage_events as mu')
@@ -296,6 +330,7 @@ class DashboardController extends Controller
                     'route' => $row->route,
                     'status_code' => $row->status_code !== null ? (int) $row->status_code : null,
                     'duration_ms' => (int) $row->duration_ms,
+                    'detail_type' => 'event',
                 ];
 
                 $technicalDetails = [
@@ -322,6 +357,14 @@ class DashboardController extends Controller
                         ->get()
                         ->map($mapTechnicalDetail),
                 ];
+            }
+
+            if (count($technicalDetails['errors']) === 0 && (int) ($summary->total_errors ?? 0) > 0) {
+                $technicalDetails['errors'] = $aggregateTechnicalDetails('mu.errors_count');
+            }
+
+            if (count($technicalDetails['slow_requests']) === 0 && (int) ($summary->slow_requests ?? 0) > 0) {
+                $technicalDetails['slow_requests'] = $aggregateTechnicalDetails('mu.slow_requests_count');
             }
 
             return response()->json([
@@ -451,6 +494,15 @@ class DashboardController extends Controller
                     ->leftJoin('clientes as c', 'c.id', '=', 'mu.cliente_id')
                     ->whereBetween('mu.date', [$fromDate->toDateString(), $toDate->toDateString()])
                     ->where('mu.module', '!=', 'Autenticacion')
+                    ->where('mu.submodule', '!=', 'Autenticacion')
+                    ->where('mu.action', '!=', 'Autenticacion')
+                    ->where('mu.module', '!=', 'Sin clasificar')
+                    ->where('mu.submodule', '!=', 'Sin clasificar')
+                    ->where('mu.submodule', '!=', 'Politicas')
+                    ->where('mu.action', 'not like', 'Listar%')
+                    ->where('mu.action', 'not like', 'Consultar%')
+                    ->where('mu.action', 'not like', 'Ver %')
+                    ->where('mu.action', 'not like', 'Verificar%')
                     ->where('u.activo', 's')
                     ->whereNull('u.deleted_at')
                     ->select(
@@ -477,6 +529,14 @@ class DashboardController extends Controller
                     ->leftJoin('clientes as c', 'c.id', '=', 'mu.cliente_id')
                     ->whereBetween('mu.date', [$fromDate->toDateString(), $toDate->toDateString()])
                     ->where('mu.module', '!=', 'Autenticacion')
+                    ->where('mu.submodule', '!=', 'Autenticacion')
+                    ->where('mu.module', '!=', 'Sin clasificar')
+                    ->where('mu.submodule', '!=', 'Sin clasificar')
+                    ->where('mu.submodule', '!=', 'Politicas')
+                    ->where('mu.action', 'not like', 'Listar%')
+                    ->where('mu.action', 'not like', 'Consultar%')
+                    ->where('mu.action', 'not like', 'Ver %')
+                    ->where('mu.action', 'not like', 'Verificar%')
                     ->where('u.activo', 's')
                     ->whereNull('u.deleted_at')
                     ->select(
