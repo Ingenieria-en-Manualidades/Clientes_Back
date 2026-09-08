@@ -52,6 +52,7 @@ class DashboardController extends Controller
                             'critical_actions' => 0,
                         ],
                         'modules' => [],
+                        'submodules' => [],
                         'most_active_users' => [],
                         'last_activity_by_user' => [],
                         'user_module_usage' => [],
@@ -60,16 +61,31 @@ class DashboardController extends Controller
                         'peak_hours' => [],
                         'daily_usage' => [],
                         'low_usage_modules' => [],
+                        'low_usage_submodules' => [],
+                        'technical_details' => [
+                            'errors' => [],
+                            'slow_requests' => [],
+                            'critical_actions' => [],
+                        ],
                     ],
                 ], 200);
             }
 
             $normalizedModule = "case when mu.submodule = 'Tablero Sae' and mu.module in ('Metas', 'Cumplimiento Mensual', 'Unidades programadas', 'Cumplimiento Diarios') then 'Tablero Sae' when mu.submodule = 'Administracion' and mu.module in ('Usuarios', 'Roles', 'Clientes', 'Politicas') then 'Administracion' else mu.module end";
+            $normalizedSubmodule = "case when mu.submodule = 'Tablero Sae' and mu.module in ('Metas', 'Cumplimiento Mensual', 'Unidades programadas', 'Cumplimiento Diarios') then mu.module when mu.submodule = 'Administracion' and mu.module in ('Usuarios', 'Roles', 'Clientes', 'Politicas') then mu.module else mu.submodule end";
 
             $base = DB::table('metric_usages as mu')
                 ->join('users as u', 'u.id', '=', 'mu.user_id')
                 ->where('mu.date', '>=', $fromDate->toDateString())
                 ->where('mu.module', '!=', 'Autenticacion')
+                ->where('mu.submodule', '!=', 'Autenticacion')
+                ->where('mu.module', '!=', 'Sin clasificar')
+                ->where('mu.submodule', '!=', 'Sin clasificar')
+                ->where('mu.submodule', '!=', 'Politicas')
+                ->where('mu.action', 'not like', 'Listar%')
+                ->where('mu.action', 'not like', 'Consultar%')
+                ->where('mu.action', 'not like', 'Ver %')
+                ->where('mu.action', 'not like', 'Verificar%')
                 ->where('u.activo', 's')
                 ->whereNull('u.deleted_at');
 
@@ -106,6 +122,38 @@ class DashboardController extends Controller
                 ]);
 
             $lowUsageModules = $modules
+                ->sortBy([
+                    ['percentage', 'asc'],
+                    ['requests', 'asc'],
+                ])
+                ->values();
+
+            $submodules = (clone $base)
+                ->whereRaw($normalizedModule.' != ?', ['Administracion'])
+                ->selectRaw($normalizedModule.' as module')
+                ->selectRaw($normalizedSubmodule.' as submodule')
+                ->selectRaw('count(distinct mu.user_id) as users_count')
+                ->selectRaw('coalesce(sum(mu.requests_count), 0) as requests')
+                ->selectRaw('coalesce(sum(mu.errors_count), 0) as errors')
+                ->selectRaw('coalesce(sum(mu.slow_requests_count), 0) as slow_requests')
+                ->selectRaw('coalesce(sum(mu.critical_actions_count), 0) as critical_actions')
+                ->groupByRaw($normalizedModule)
+                ->groupByRaw($normalizedSubmodule)
+                ->orderByDesc('requests')
+                ->get()
+                ->map(fn ($submodule) => [
+                    'module' => $submodule->module,
+                    'submodule' => $submodule->submodule,
+                    'label' => $submodule->module.' - '.$submodule->submodule,
+                    'users_count' => (int) $submodule->users_count,
+                    'requests' => (int) $submodule->requests,
+                    'errors' => (int) $submodule->errors,
+                    'slow_requests' => (int) $submodule->slow_requests,
+                    'critical_actions' => (int) $submodule->critical_actions,
+                    'percentage' => $totalRequests > 0 ? round(((int) $submodule->requests / $totalRequests) * 100, 2) : 0,
+                ]);
+
+            $lowUsageSubmodules = $submodules
                 ->sortBy([
                     ['percentage', 'asc'],
                     ['requests', 'asc'],
@@ -154,9 +202,12 @@ class DashboardController extends Controller
                 ->groupBy('mu.date')
                 ->orderBy('mu.date')
                 ->get()
+                ->keyBy('date');
+
+            $dailyUsage = collect(range(0, $days - 1))
                 ->map(fn ($day) => [
-                    'date' => $day->date,
-                    'requests' => (int) $day->requests,
+                    'date' => $fromDate->copy()->addDays($day)->toDateString(),
+                    'requests' => (int) ($dailyUsage->get($fromDate->copy()->addDays($day)->toDateString())?->requests ?? 0),
                 ]);
 
             $peakHours = (clone $base)
@@ -201,6 +252,78 @@ class DashboardController extends Controller
                     'average_usage' => (float) $client->average_usage,
                 ]);
 
+            $technicalDetails = [
+                'errors' => [],
+                'slow_requests' => [],
+                'critical_actions' => [],
+            ];
+
+            if (Schema::hasTable('metric_usage_events')) {
+                $eventsBase = DB::table('metric_usage_events as mu')
+                    ->join('users as u', 'u.id', '=', 'mu.user_id')
+                    ->leftJoin('clientes as c', 'c.id', '=', 'mu.cliente_id')
+                    ->where('mu.date', '>=', $fromDate->toDateString())
+                    ->where('mu.module', '!=', 'Autenticacion')
+                    ->where('mu.submodule', '!=', 'Autenticacion')
+                    ->where('mu.action', '!=', 'Autenticacion')
+                    ->where('mu.module', '!=', 'Sin clasificar')
+                    ->where('mu.submodule', '!=', 'Sin clasificar')
+                    ->where('mu.submodule', '!=', 'Politicas')
+                    ->where('u.activo', 's')
+                    ->whereNull('u.deleted_at');
+
+                $technicalDetailColumns = [
+                    'mu.fecha_registro',
+                    'u.name as user',
+                    DB::raw("coalesce(c.nombre, 'Sin cliente') as client"),
+                    DB::raw($normalizedModule.' as module'),
+                    DB::raw($normalizedSubmodule.' as submodule'),
+                    'mu.action',
+                    'mu.method',
+                    'mu.route',
+                    'mu.status_code',
+                    'mu.duration_ms',
+                ];
+
+                $mapTechnicalDetail = fn ($row) => [
+                    'fecha_registro' => $row->fecha_registro,
+                    'user' => $row->user,
+                    'client' => $row->client,
+                    'module' => $row->module,
+                    'submodule' => $row->submodule,
+                    'action' => $row->action,
+                    'method' => $row->method,
+                    'route' => $row->route,
+                    'status_code' => $row->status_code !== null ? (int) $row->status_code : null,
+                    'duration_ms' => (int) $row->duration_ms,
+                ];
+
+                $technicalDetails = [
+                    'errors' => (clone $eventsBase)
+                        ->where('mu.is_error', true)
+                        ->select($technicalDetailColumns)
+                        ->orderByDesc('mu.fecha_registro')
+                        ->take(50)
+                        ->get()
+                        ->map($mapTechnicalDetail),
+                    'slow_requests' => (clone $eventsBase)
+                        ->where('mu.is_slow', true)
+                        ->select($technicalDetailColumns)
+                        ->orderByDesc('mu.duration_ms')
+                        ->orderByDesc('mu.fecha_registro')
+                        ->take(50)
+                        ->get()
+                        ->map($mapTechnicalDetail),
+                    'critical_actions' => (clone $eventsBase)
+                        ->where('mu.is_critical', true)
+                        ->select($technicalDetailColumns)
+                        ->orderByDesc('mu.fecha_registro')
+                        ->take(50)
+                        ->get()
+                        ->map($mapTechnicalDetail),
+                ];
+            }
+
             return response()->json([
                 'data' => [
                     'summary' => [
@@ -213,6 +336,7 @@ class DashboardController extends Controller
                         'critical_actions' => (int) ($summary->critical_actions ?? 0),
                     ],
                     'modules' => $modules,
+                    'submodules' => $submodules,
                     'most_active_users' => $mostActiveUsers,
                     'last_activity_by_user' => $lastActivityByUser,
                     'user_module_usage' => $userModuleUsage,
@@ -221,6 +345,8 @@ class DashboardController extends Controller
                     'peak_hours' => $peakHours,
                     'daily_usage' => $dailyUsage,
                     'low_usage_modules' => $lowUsageModules,
+                    'low_usage_submodules' => $lowUsageSubmodules,
+                    'technical_details' => $technicalDetails,
                 ],
             ], 200);
         } catch (\Exception $e) {
